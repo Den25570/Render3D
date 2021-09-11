@@ -1,0 +1,42 @@
+﻿<Window x:Class="Render3D.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Render3D"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800"
+        PreviewKeyDown="main_canvas_KeyDown"
+        >
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="7*"/>
+        </Grid.ColumnDefinitions>
+        <Menu Height="20" VerticalAlignment="Top" Grid.ColumnSpan="2">
+            <MenuItem Header="File">
+                <MenuItem Header="Open..." Click="OpenItem_Click"></MenuItem>
+                <MenuItem Header="Exit" Click="ExitItem_Click"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Edit">
+                <TextBlock Text="Translation X,Y,Z"></TextBlock>
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding XTranslation, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding YTranslation, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding ZTranslation, UpdateSourceTrigger=PropertyChanged}" />
+                <Separator />
+                <TextBlock Text="Rotation X,Y,Z"></TextBlock>
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding XRotation, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding YRotation, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding ZRotation, UpdateSourceTrigger=PropertyChanged}" />
+                <Separator />
+                <TextBlock Text="Scale X,Y,Z"></TextBlock>
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding XScale, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding YScale, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding ZScale, UpdateSourceTrigger=PropertyChanged}" />
+            </MenuItem>
+        </Menu>
+        <TextBlock Panel.ZIndex="3" Text="{Binding CameraTarget, UpdateSourceTrigger=PropertyChanged}" Margin="0,1,205,0" Width="200" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top" Grid.Column="1"/>
+        <TextBlock Panel.ZIndex="2" Text="{Binding CameraPosition, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Margin="0,1,0,0" Width="200" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"></TextBlock>
+        <Canvas Panel.ZIndex="1" MouseUp="main_canvas_MouseUp" MouseDown="main_canvas_MouseDown" PreviewMouseMove="main_canvas_PreviewMouseMove" Name="main_canvas" Margin="0,20,0,0" Grid.ColumnSpan="2" VerticalAlignment="Stretch"/>
+    </Grid>
+</Window>
