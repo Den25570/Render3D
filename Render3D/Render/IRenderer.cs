@@ -1,7 +1,8 @@
-﻿using Render3D.Model;
+﻿using Render3D.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -13,6 +14,6 @@ namespace Render3D.Render
         public bool HasBitmap { get;}
         public void CreateBitmap(Canvas canvas, int width, int height);
 
-        void RenderModel(ObjectModel objectModel);
+        void RenderModel(Model model, Vector3 lightDirection);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Render3D.Model;
+﻿using Render3D.Extensions;
+using Render3D.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,60 +7,45 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Render3D.Model
+namespace Render3D.Models
 {
     public class ObjectModel
     {
-        public Vector4[] Vertices;
-        public Vector3[] VertexNormals;
-        public Vector3[] TextureVertices;
-        public Vector3[] SpaceVertices;
+        public List<Vector4> Vertices;
+        public List<Vector3> VertexNormals;
+        public List<Vector3> TextureVertices;
+        public List<Vector3> SpaceVertices;
 
-        public List<Vector3>[] Faces;
-        public List<int>[] Lines;
+        public List<List<FaceVertex>> Faces;
+        public List<List<int>> Lines;
 
-        public ObjectModel TransformModel(Matrix4x4 transform)
+        public void CalculateNormals()
         {
-            ObjectModel newModel = new ObjectModel()
+            var normals = new List<Vector3> { };
+            normals.AddRange(VertexNormals);
+            for (int i = 0; i < Faces.Count; i++)
             {
-                Vertices = new Vector4[Vertices.Length],
+                if (Faces[i][0].vn == 0)
+                {
+                    var l1 = Vertices[Faces[i][1].v - 1] - Vertices[Faces[i][0].v - 1];
+                    var l2 = Vertices[Faces[i].Last().v - 1] - Vertices[Faces[i][0].v - 1];
+                    var normal = Vector3.Normalize(Vector3.Cross(l1.ToVector3(), l2.ToVector3()));
+                    normals.Add(normal);
 
-                VertexNormals = VertexNormals,
-                TextureVertices = TextureVertices,
-                SpaceVertices = SpaceVertices,
-                Faces = Faces,
-                Lines = Lines,
-            };
-
-            for (int i = 0; i < Vertices.Length; i++)
-            {
-                newModel.Vertices[i] = Vertices[i];
-                newModel.Vertices[i] = Vector4.Transform(newModel.Vertices[i], transform);
-                newModel.Vertices[i].X /= newModel.Vertices[i].W;
-                newModel.Vertices[i].Y /= newModel.Vertices[i].W;
-                newModel.Vertices[i].Z /= newModel.Vertices[i].W;
-
+                    var newFace = new List<FaceVertex>();
+                    foreach (var vertex in Faces[i])
+                    {
+                        newFace.Add(new FaceVertex()
+                        {
+                            v = vertex.v,
+                            vn = normals.Count(),
+                            vt = vertex.vt
+                        });
+                    }
+                    Faces[i] = newFace;
+                }
             }
-            return newModel;
-        }
-        public ObjectModel TranslateModel(Vector4 translateVector)
-        {
-            ObjectModel newModel = new ObjectModel()
-            {
-                Vertices = new Vector4[Vertices.Length],
-
-                VertexNormals = VertexNormals,
-                TextureVertices = TextureVertices,
-                SpaceVertices = SpaceVertices,
-                Faces = Faces,
-                Lines = Lines,
-            };
-
-            for (int i = 0; i < Vertices.Length; i++)
-            {
-                newModel.Vertices[i] = Vector4.Add(Vertices[i], translateVector);
-            }
-            return newModel;
+            VertexNormals = normals;
         }
     }
 }

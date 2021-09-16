@@ -1,4 +1,4 @@
-﻿using Render3D.Model;
+﻿using Render3D.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,14 +13,17 @@ namespace Render3D.Parser
     {
         public ObjectModel Parse(string path)
         {
-            ObjectModel model = new ObjectModel();
+            ObjectModel model = new ObjectModel()
+            {
 
-            var Vertices = new List<Vector4>();
-            var VertexNormals = new List<Vector3>();
-            var TextureVertices = new List<Vector3>();
-            var SpaceVertices = new List<Vector3>();
-            var Faces = new List<List<Vector3>>();
-            var Lines = new List<List<int>>();
+                Vertices = new List<Vector4>(),
+                VertexNormals = new List<Vector3>(),
+                TextureVertices = new List<Vector3>(),
+                SpaceVertices = new List<Vector3>(),
+                Faces = new List<List<FaceVertex>>(),
+                Lines = new List<List<int>>(),
+            };
+
 
             using (StreamReader reader = File.OpenText(path))
             {
@@ -33,7 +36,7 @@ namespace Render3D.Parser
                         switch (items[0])
                         {
                             case "v":
-                                Vertices.Add(new Vector4()
+                                model.Vertices.Add(new Vector4()
                                 {
                                     X = float.Parse(items[1].Replace('.', ',')),
                                     Y = float.Parse(items[2].Replace('.', ',')),
@@ -42,7 +45,7 @@ namespace Render3D.Parser
                                 });
                                 break;
                             case "vt":
-                                TextureVertices.Add(new Vector3()
+                                model.TextureVertices.Add(new Vector3()
                                 {
                                     X = float.Parse(items[1].Replace('.', ',')),
                                     Y = items.Length >= 3 ? float.Parse(items[2].Replace('.', ',')) : 0.0F,
@@ -50,7 +53,7 @@ namespace Render3D.Parser
                                 });
                                 break;
                             case "vn":
-                                VertexNormals.Add(new Vector3()
+                                model.VertexNormals.Add(new Vector3()
                                 {
                                     X = float.Parse(items[1].Replace('.', ',')),
                                     Y = float.Parse(items[2].Replace('.', ',')),
@@ -58,7 +61,7 @@ namespace Render3D.Parser
                                 });
                                 break;
                             case "vp":
-                                SpaceVertices.Add(new Vector3()
+                                model.SpaceVertices.Add(new Vector3()
                                 {
                                     X = float.Parse(items[1].Replace('.', ',')),
                                     Y = items.Length >= 3 ? float.Parse(items[2].Replace('.', ',')) : 0.0F,
@@ -66,18 +69,18 @@ namespace Render3D.Parser
                                 });
                                 break;
                             case "f":
-                                var face = new List<Vector3>();
+                                var face = new List<FaceVertex>();
                                 for (int i = 1; i < items.Length; i++)
                                 {
                                     var vertexIndices = items[i].Split('/');
-                                    face.Add(new Vector3()
+                                    face.Add(new FaceVertex()
                                     {
-                                       X = int.Parse(vertexIndices[0]),
-                                       Y = vertexIndices.Length >= 1 && vertexIndices[1] != "" ? int.Parse(vertexIndices[1]) : 0,
-                                       Z = vertexIndices.Length >= 2 ? int.Parse(vertexIndices[2]) : 0,
+                                       v = int.Parse(vertexIndices[0]),
+                                       vt = vertexIndices.Length > 1 && vertexIndices[1] != "" ? int.Parse(vertexIndices[1]) : 0,
+                                       vn = vertexIndices.Length > 2 ? int.Parse(vertexIndices[2]) : 0,
                                     });
                                 }
-                                Faces.Add(face);
+                                model.Faces.Add(face);
                                 break;
                             case "l":
                                 var line = new List<int>();
@@ -85,18 +88,11 @@ namespace Render3D.Parser
                                 {
                                     line.Add(int.Parse(items[i]));
                                 }
-                                Lines.Add(line);
+                                model.Lines.Add(line);
                                 break;
                         }
                     }
                 }
-
-                model.Vertices = Vertices.ToArray();
-                model.VertexNormals = VertexNormals.ToArray();
-                model.TextureVertices = TextureVertices.ToArray();
-                model.SpaceVertices = SpaceVertices.ToArray();
-                model.Faces = Faces.ToArray();
-                model.Lines = Lines.ToArray();
             }
 
             return model;

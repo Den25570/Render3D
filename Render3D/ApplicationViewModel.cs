@@ -12,6 +12,8 @@ namespace Render3D
 {
     public class ApplicationViewModel : INotifyPropertyChanged
     {
+        private float timePerRender;
+
         private float xTranslation;
         private float yTranslation;
         private float zTranslation;
@@ -24,8 +26,12 @@ namespace Render3D
         private float yRotation;
         private float zRotation;
 
+        public Vector3 cameraRotation;
+        public Vector3 lightDirection;
+
         private Camera camera;
 
+        public float FPS { get { return timePerRender; } set { timePerRender = value; OnPropertyChanged("FPS"); } }
         public float XTranslation { get { return xTranslation; } set { xTranslation = value; OnPropertyChanged("XTranslation"); } }
         public float YTranslation { get { return yTranslation; } set { yTranslation = value; OnPropertyChanged("YTranslation"); } }
         public float ZTranslation { get { return zTranslation; } set { zTranslation = value; OnPropertyChanged("ZTranslation"); } }
@@ -38,15 +44,17 @@ namespace Render3D
         public float YRotation { get { return yRotation; } set { yRotation = value; OnPropertyChanged("YRotation"); } }
         public float ZRotation { get { return zRotation; } set { zRotation = value; OnPropertyChanged("ZRotation"); } }
 
+        public Vector3 CameraRotation { get { return cameraRotation; } set { cameraRotation = value; OnPropertyChanged("CameraRotation"); } }
         public Vector3 CameraPosition { get { return camera.Position; } set { camera.Position = value; OnPropertyChanged("CameraPosition"); } }
-        public Vector3 CameraTarget { get { return camera.Target; } set { camera.Target = value; OnPropertyChanged("CameraTarget"); } }
+        public Vector3 CameraForward { get { return camera.Forward; } set { OnPropertyChanged("CameraForward"); } }
         public Camera Camera { get { return camera; } set { camera = value; OnPropertyChanged("Camera"); } }
+        public Vector3 LightDirection { get { return lightDirection; } set { lightDirection = value; OnPropertyChanged("LightDirection"); } }
 
         public ApplicationViewModel()
         {
             XTranslation = 0;
-            YTranslation = 1;
-            ZTranslation = 5;
+            YTranslation = 0;
+            ZTranslation = 4;
 
             XRotation = 0;
             YRotation = 0;
@@ -56,16 +64,16 @@ namespace Render3D
             YScale = 100;
             ZScale = 100;
 
+            CameraRotation = Vector3.Zero;
+            LightDirection = -Vector3.UnitZ;
+
             camera = new Camera()
             {
                 ZNear = 0.1f,
                 ZFar = 200f,
-                FOV = MathF.PI / 4,
-                Speed = 0.5f,
-                RotationSpeed = 0.3f,
-                MouseSpeed = 1f,
+                FOV = MathF.PI / 3,
                 Position = new Vector3(0, 0, 0),
-                Target = new Vector3(0, 1, 5),
+                Target = new Vector3(0, 0, 1),
             };  
         }
 
