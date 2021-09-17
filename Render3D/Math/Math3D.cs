@@ -48,27 +48,25 @@ namespace Render3D.Math
         public static Matrix4x4 GetInverseMatrix(Matrix4x4 mat)
         {
             Matrix4x4 result;
-            Matrix4x4.Invert(mat, out result);
+            result = QuickInverse(mat);
             return result;
         }
 
-        public static Matrix4x4 GetLookAtMatrix(Vector3 eye, Vector3 target, Vector3 up)
+        public static Matrix4x4 GetLookAtMatrix(Vector3 eye, Vector3 target, Vector3 up, Vector3 right)
         {
-            var cameraDir = Vector3.Normalize(target - eye);
-            var cameraRight = Vector3.Normalize(Vector3.Cross(up, cameraDir));
-            var cameraUp = Vector3.Cross(cameraDir, cameraRight);
+            var front = Vector3.Normalize(target - eye);
 
             var mat = Matrix4x4.Transpose(new Matrix4x4()
             {
-                M11 = cameraRight.X,
-                M12 = cameraRight.Y,
-                M13 = cameraRight.Z,
-                M21 = cameraUp.X,
-                M22 = cameraUp.Y,
-                M23 = cameraUp.Z,
-                M31 = cameraDir.X,
-                M32 = cameraDir.Y,
-                M33 = cameraDir.Z,
+                M11 = right.X,
+                M12 = right.Y,
+                M13 = right.Z,
+                M21 = up.X,
+                M22 = up.Y,
+                M23 = up.Z,
+                M31 = front.X,
+                M32 = front.Y,
+                M33 = front.Z,
                 M44 = 1,
             });
             var positionMatrix = Matrix4x4.Transpose(new Matrix4x4()
@@ -125,7 +123,7 @@ namespace Render3D.Math
             //return Matrix4x4.CreateRotationX(rotation.X) * Matrix4x4.CreateRotationX(rotation.Y) * Matrix4x4.CreateRotationX(rotation.Z);
         }
 
-        public static Quaternion GetRotationWorldAngles(Vector3 forward, Quaternion rotation)
+        public static Quaternion GetRotationWorldAngles(Vector3 forward, Vector3 rotation)
         {
             var rotationMatrix = GetRotationAroundVectorMatrix(forward, rotation);
             var quaternion = new Quaternion()
@@ -137,7 +135,7 @@ namespace Render3D.Math
             return quaternion;
         }
 
-        public static Matrix4x4 GetRotationAroundVectorMatrix(Vector3 forward, Quaternion rotation)
+        public static Matrix4x4 GetRotationAroundVectorMatrix(Vector3 forward, Vector3 rotation)
         {
             forward = Vector3.Normalize(forward);
             var right = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, forward));
@@ -198,6 +196,18 @@ namespace Render3D.Math
                 M32 = v.X,
                 M44 = 1
             };
+        }
+
+        public static Vector3 RotateVectorAroundAxis(Vector3 v, Vector3 axis, float angle)
+        {
+            var vToAxis = Vector3.Multiply(Vector3.Multiply(v, axis), axis);
+            var vOrthogonalToAxis = v - vToAxis;
+            var w = Vector3.Cross(axis, v);
+            var x1 = MathF.Cos(angle) / vOrthogonalToAxis.Length();
+            var x2 = MathF.Sin(angle) / w.Length();
+            var linearCombination = vOrthogonalToAxis.Length() * (vOrthogonalToAxis * x1 + w * x2);
+            var result = linearCombination + vToAxis;
+            return result;
         }
 
         public static Matrix4x4 QuickInverse(Matrix4x4 m) // Only for Rotation/Translation Matrices

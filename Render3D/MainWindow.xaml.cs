@@ -66,50 +66,27 @@ namespace Render3D
                 new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F), 
                 new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation), 
                 new Vector3(dataContext.XTranslation, dataContext.YTranslation, dataContext.ZTranslation));
-            dataContext.Camera.Rotate(dataContext.CameraRotation);
             dataContext.CameraForward = Vector3.Zero;
-            var viewMatrix = Math.Math3D.GetLookAtMatrix(dataContext.Camera.Position, dataContext.Camera.Target, Vector3.UnitY);
-            var InverseViewMatrix = Math.Math3D.GetInverseMatrix(viewMatrix);
+            var viewMatrix = Math.Math3D.GetLookAtMatrix(dataContext.Camera.Position, dataContext.Camera.Target, dataContext.Camera.Up, dataContext.Camera.Right);
+            viewMatrix = Math.Math3D.GetInverseMatrix(viewMatrix);
             var projectionMatrix = Math.Math3D.GetPerspectiveProjectionMatrix(dataContext.Camera.FOV, dataContext.Camera.ZNear, dataContext.Camera.ZFar, width / height);
             var viewportMatrix = Math.Math3D.GetViewportMatrix(width, height, 0, 0);
 
             // Model coodinates -> perspective coodinates
-            stopwatch.Stop();
-            var a0 = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
-            var transformedModel = model.TransformModel(modelMatrix);
-            stopwatch.Stop();
-            var a1 = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
+            var transformedModel = model.TransformModel(modelMatrix, true);
             // RemoveHiddenFaces
             transformedModel = transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
-            stopwatch.Stop();
-            var a2 = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
             // Camera
-            transformedModel = transformedModel.TransformModel(InverseViewMatrix);
-            stopwatch.Stop();
-            var a3 = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
+            transformedModel = transformedModel.TransformModel(viewMatrix);
             // Clip triangles to camera
             transformedModel = transformedModel.ClipTriangles(
                 new Vector3(0, 0, dataContext.Camera.ZNear),
                 new Vector3(0, 0, 1));
             // 3D -> 2D
-            stopwatch.Stop();
-            var a4 = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
             transformedModel = transformedModel.TransformModel(projectionMatrix);
-            stopwatch.Stop();
-            var a5 = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
 
             // Convert to current viewport
             transformedModel = transformedModel.TransformModel(viewportMatrix);
-
-            stopwatch.Stop();
-            var a = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
 
             //Clip triangles to screenbox
             transformedModel = transformedModel.ClipTriangles(
@@ -125,16 +102,8 @@ namespace Render3D
                 new Vector3(width - 1, 0, 0),
                 -Vector3.UnitX);
 
-            stopwatch.Stop();
-            var b = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
-
             //Render
             _renderer.RenderModel(transformedModel, dataContext.lightDirection);
-
-            stopwatch.Stop();
-            var c = stopwatch.ElapsedMilliseconds;
-            stopwatch.Start();
 
             stopwatch.Stop();
             dataContext.FPS = 1f / ((stopwatch.ElapsedMilliseconds > 0 ? stopwatch.ElapsedMilliseconds : 0.01f) / 1000f);
@@ -175,80 +144,57 @@ namespace Render3D
 
         private void main_canvas_KeyDown(object sender, KeyEventArgs e)
         {
-            
-
-            Quaternion rotationDirection = Quaternion.Identity;
-            Matrix4x4 rotationMatrix = Math.Math3D.GetRotationMatrix(new Vector3((MathF.PI / 180) * -dataContext.XRotation, (MathF.PI / 180) * -dataContext.YRotation, (MathF.PI / 180) * -dataContext.ZRotation));
-
-            //Vector3 forward = Vector3.Transform(dataContext.Camera.Forward, rotationMatrix);
-
-            Vector3 direction = Vector3.Zero;
-            if (e.Key == Key.Up)
-            {
-                direction.Y += Speed;
-            }
-            if (e.Key == Key.Down)
-            {
-                direction.Y -= Speed;
-            }
-            if (e.Key == Key.Left)
-            {
-                direction.X -= Speed;
-            }
-            if (e.Key == Key.Right)
-            {
-                direction.X +=  Speed;
-            }
-
             Vector3 forward = dataContext.Camera.Forward * 0.1f;
             forward.X = -forward.X;
             forward.Y = -forward.Y;
+
+            Vector3 direction = Vector3.Zero;
+            Vector3 cameraRotation = Vector3.Zero;
             if (e.Key == Key.W)
             {
-                dataContext.Camera.Position -= forward;
+                direction += forward;
             }
             if (e.Key == Key.S)
             {
-                dataContext.Camera.Position += forward;
+                direction -= forward;
             }
-
-            Vector3 rotation = Vector3.Zero;
             if (e.Key == Key.A)
             {
-                rotation.Y -= RotationSpeed;
+                cameraRotation.Y -= RotationSpeed;
             }
             if (e.Key == Key.D)
             {
-                rotation.Y += RotationSpeed;
+                cameraRotation.Y += RotationSpeed;
             }
-            dataContext.CameraRotation += rotation;
-            /*
-            if (e.Key == Key.Left)
+            if (e.Key == Key.Q)
             {
-                rotationDirection.Y -= dataContext.Camera.RotationSpeed * 10f;
+                cameraRotation.X -= RotationSpeed;
             }
-            if (e.Key == Key.Right)
+            if (e.Key == Key.E)
             {
-                rotationDirection.Y += dataContext.Camera.RotationSpeed * 10f;
+                cameraRotation.X += RotationSpeed;
             }
+
             if (e.Key == Key.Up)
             {
-                rotationDirection.X += dataContext.Camera.RotationSpeed * 10f;
+                dataContext.XRotation += RotationSpeed * 15;
             }
             if (e.Key == Key.Down)
             {
-                rotationDirection.X -= dataContext.Camera.RotationSpeed * 10f;
-            }*/
+                dataContext.XRotation -= RotationSpeed * 15;
+            }
+            if (e.Key == Key.Left)
+            {
+                dataContext.YRotation -= RotationSpeed * 15;
+            }
+            if (e.Key == Key.Right)
+            {
+                dataContext.YRotation += RotationSpeed * 15;
+            }
 
-            /* dataContext.Camera.Position += direction;
-             dataContext.Camera.Target += direction;*/
-
-            /*Quaternion quaternion = MatrixTransformations.GetRotationWorldAngles(forward, rotationDirection * (MathF.PI / 180)) * (1 / (MathF.PI / 180));
-            dataContext.XRotation += quaternion.X;
-            dataContext.YRotation += quaternion.Y;
-            dataContext.ZRotation += quaternion.Z;*/
-
-            dataContext.Camera.Position += direction;
+            dataContext.Camera.Move(direction);
+            dataContext.Camera.Rotate(cameraRotation);
+            
             RenderModel();
         }
 

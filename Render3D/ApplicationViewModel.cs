@@ -72,8 +72,9 @@ namespace Render3D
                 ZNear = 0.1f,
                 ZFar = 200f,
                 FOV = MathF.PI / 3,
-                Position = new Vector3(0, 0, 0),
-                Target = new Vector3(0, 0, 1),
+                Up = new Vector3(0,1,0),
+                Position = new Vector3(0, 1, 0),
+                Target = new Vector3(0, 1, 0) + Vector3.UnitZ,
             };  
         }
 
