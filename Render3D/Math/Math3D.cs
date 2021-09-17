@@ -11,6 +11,14 @@ namespace Render3D.Math
 {
     public static class Math3D
     {
+        public static Matrix4x4 GetViewMatrix(Vector3 cameraPosition, Vector3 cameraRotation)
+        {
+            var viewTransform = GetTranslationMatrix(-cameraPosition);
+            var rot = Quaternion.Inverse(Quaternion.CreateFromYawPitchRoll(cameraRotation.X, cameraRotation.Y, cameraRotation.Z));
+            viewTransform = Matrix4x4.Transform(viewTransform, rot);
+            return viewTransform;
+        }
+
         public static Matrix4x4 GetViewportMatrix(float width, float height, float xmin, float ymin)
         {
             var matScale = Matrix4x4.Transpose(new Matrix4x4()
@@ -72,11 +80,11 @@ namespace Render3D.Math
             var positionMatrix = Matrix4x4.Transpose(new Matrix4x4()
             {
                 M11 = 1,
-                M14 = eye.X,
+                M14 = -eye.X,
                 M22 = 1,
-                M24 = eye.Y,
+                M24 = -eye.Y,
                 M33 = 1,
-                M34 = eye.Z,
+                M34 = -eye.Z,
                 M44 = 1,
             });
 
@@ -292,6 +300,27 @@ namespace Render3D.Math
                 result.Add(newTriangle2);
             }
             return result;
+        }
+
+        public static float EdgeFunction(float x1, float y1, float x2, float y2, float x3, float y3)
+        {
+            return (x1 - x2) * (y3 - y1) - (y1 - y2) * (x3 - x1);
+        }
+
+        public static float InterpolateZ(Vector3 v1, Vector3 v2, Vector3 v3, int x, int y)
+        {
+            var bX = ((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var bY = ((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var bZ = 1 - bX - bY;
+            return v1.Z * bX + v2.Z * bY + v3.Z * bZ;
+        }
+
+        public static float InterpolateZ(Vector4 v1, Vector4 v2, Vector4 v3, int x, int y)
+        {
+            var W1 = MathF.Max(((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y)),0);
+            var W2 = MathF.Max(((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y)), 0);
+            var W3 = MathF.Max(1 - W1 - W2,0);
+            return v1.Z * W1 + v2.Z * W2 + v3.Z * W3;
         }
     }
 }

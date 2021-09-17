@@ -37,7 +37,6 @@
             </MenuItem>
         </Menu>
         <TextBlock Panel.ZIndex="2" Text="{Binding FPS}" Grid.Column="1" Margin="0,1,201,0" Width="200" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"></TextBlock>
-        <TextBlock Panel.ZIndex="2" Text="{Binding CameraForward}" Grid.Column="1" Margin="0,1,0,0" Width="200" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"></TextBlock>
         <Canvas Panel.ZIndex="1" MouseUp="main_canvas_MouseUp" MouseDown="main_canvas_MouseDown" PreviewMouseMove="main_canvas_PreviewMouseMove" Name="main_canvas" Margin="0,20,0,0" Grid.ColumnSpan="2" VerticalAlignment="Stretch"/>
     </Grid>
 </Window>

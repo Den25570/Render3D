@@ -1,4 +1,5 @@
 ﻿using Render3D.Models;
+using Render3D.Render;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -26,8 +27,9 @@ namespace Render3D
         private float yRotation;
         private float zRotation;
 
-        public Vector3 cameraRotation;
         public Vector3 lightDirection;
+
+        public RenderMode renderMode;
 
         private Camera camera;
 
@@ -44,10 +46,8 @@ namespace Render3D
         public float YRotation { get { return yRotation; } set { yRotation = value; OnPropertyChanged("YRotation"); } }
         public float ZRotation { get { return zRotation; } set { zRotation = value; OnPropertyChanged("ZRotation"); } }
 
-        public Vector3 CameraRotation { get { return cameraRotation; } set { cameraRotation = value; OnPropertyChanged("CameraRotation"); } }
-        public Vector3 CameraPosition { get { return camera.Position; } set { camera.Position = value; OnPropertyChanged("CameraPosition"); } }
-        public Vector3 CameraForward { get { return camera.Forward; } set { OnPropertyChanged("CameraForward"); } }
         public Camera Camera { get { return camera; } set { camera = value; OnPropertyChanged("Camera"); } }
+        public RenderMode RenderMode { get { return renderMode; } set { renderMode = value; OnPropertyChanged("RenderMode"); } }
         public Vector3 LightDirection { get { return lightDirection; } set { lightDirection = value; OnPropertyChanged("LightDirection"); } }
 
         public ApplicationViewModel()
@@ -64,18 +64,14 @@ namespace Render3D
             YScale = 100;
             ZScale = 100;
 
-            CameraRotation = Vector3.Zero;
             LightDirection = -Vector3.UnitZ;
+            RenderMode = RenderMode.Rasterization;
 
             camera = new Camera()
             {
-                ZNear = 0.1f,
-                ZFar = 200f,
-                FOV = MathF.PI / 3,
-                Up = new Vector3(0,1,0),
                 Position = new Vector3(0, 1, 0),
-                Target = new Vector3(0, 1, 0) + Vector3.UnitZ,
-            };  
+                Rotation = Vector3.Zero,
+            }; 
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

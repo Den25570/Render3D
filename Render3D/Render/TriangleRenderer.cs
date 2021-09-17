@@ -1,6 +1,7 @@
 ﻿using Render3D.Extensions;
 using Render3D.Math;
 using Render3D.Models;
+using Render3D.Utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -38,57 +39,30 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, Vector3 lightDirection)
+        public void RenderModel(Model model, RenderMode mode, Vector3 lightDirection)
         {
             try
             {
                 _bitmap.Lock();
                 Array.Clear(_zBuffer, 0, _zBuffer.Length);
                 _bitmap.Clear(System.Windows.Media.Color.FromRgb(0, 0, 0));
-                //Draw wireframe
+
                 foreach (var triangle in model.Triangles)
                 {
-                    var MinX = (int)MathF.Min(MathF.Min(triangle.Points[0].X, triangle.Points[1].X), triangle.Points[2].X) - 1;
-                    var MinY = (int)MathF.Min(MathF.Min(triangle.Points[0].Y, triangle.Points[1].Y), triangle.Points[2].Y) - 1;
-                    var MaxX = (int)MathF.Max(MathF.Max(triangle.Points[0].X, triangle.Points[1].X), triangle.Points[2].X) + 1;
-                    var MaxY = (int)MathF.Max(MathF.Max(triangle.Points[0].Y, triangle.Points[1].Y), triangle.Points[2].Y) + 1;
-
-                    //Draw edges
-                    //DrawLine((int)triangle.Points[0].X, (int)triangle.Points[0].Y, (int)triangle.Points[1].X, (int)triangle.Points[1].Y, 0x00FF00);
-                    //DrawLine((int)triangle.Points[1].X, (int)triangle.Points[1].Y, (int)triangle.Points[2].X, (int)triangle.Points[2].Y, 0x00FF00);
-                    //DrawLine((int)triangle.Points[2].X, (int)triangle.Points[2].Y, (int)triangle.Points[0].X, (int)triangle.Points[0].Y, 0x00FF00);
-
-                    //Draw triangle
-                    var dt = MathF.Max((Vector3.Dot(triangle.Normal, lightDirection) + 1) / 2, 0.25f);
-                    var color = (int)(0xFF * dt) * 0x100 * 0x100 + (int)(0xFF * dt) * 0x100 + (int)(0xFF * dt);
-                    var z = (triangle.Points[0].Z + triangle.Points[1].Z + triangle.Points[2].Z) / 3;
-
-                    DrawTriangle(
-                        (int)triangle.Points[0].X, (int)triangle.Points[0].Y,
-                        (int)triangle.Points[1].X, (int)triangle.Points[1].Y,
-                        (int)triangle.Points[2].X, (int)triangle.Points[2].Y,
-                        z, color);
-
-                    /*for (int x = MinX; x < MaxX; x++)
+                    if (mode == RenderMode.Wireframe)
                     {
-                        for (int y = MinY; y < MaxY; y++)
-                        {
-                            var ef1 = EdgeFunction(triangle.Points[0].X, triangle.Points[0].Y, triangle.Points[1].X, triangle.Points[1].Y, x, y);
-                            var ef2 = EdgeFunction(triangle.Points[1].X, triangle.Points[1].Y, triangle.Points[2].X, triangle.Points[2].Y, x, y);
-                            var ef3 = EdgeFunction(triangle.Points[2].X, triangle.Points[2].Y, triangle.Points[0].X, triangle.Points[0].Y, x, y);
-                            if ((ef1 >= 0 && ef2 >= 0 && ef3 >= 0) || (ef1 <= 0 && ef2 <= 0 && ef3 <= 0))
-                            {
-                                if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
-                                {
-                                    if (z < _zBuffer[x,y] || _zBuffer[x, y] == 0)
-                                    {
-                                        DrawPixel(x, y, color);
-                                        _zBuffer[x, y] = z;
-                                    }
-                                }            
-                            }
-                        }
-                    }*/
+                        //Draw edges
+                        DrawLine((int)triangle.Points[0].X, (int)triangle.Points[0].Y, (int)triangle.Points[1].X, (int)triangle.Points[1].Y, 0x00FF00);
+                        DrawLine((int)triangle.Points[1].X, (int)triangle.Points[1].Y, (int)triangle.Points[2].X, (int)triangle.Points[2].Y, 0x00FF00);
+                        DrawLine((int)triangle.Points[2].X, (int)triangle.Points[2].Y, (int)triangle.Points[0].X, (int)triangle.Points[0].Y, 0x00FF00);
+                    }
+                    if (mode == RenderMode.Rasterization)
+                    {
+                        //Draw triangle
+                        var dt = MathF.Max((Vector3.Dot(triangle.Normal, lightDirection) + 1) / 2, 0.25f);
+                        var color = (int)(0xFF * dt) * 0x100 * 0x100 + (int)(0xFF * dt) * 0x100 + (int)(0xFF * dt);
+                        DrawTriangle(triangle.Points[0], triangle.Points[1], triangle.Points[2], color);
+                    }
                 }
                 _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             }
@@ -99,66 +73,54 @@ namespace Render3D.Render
 
         }
 
-        private float EdgeFunction(float x1, float y1, float x2, float y2, float x3, float y3)
+        private void DrawTriangle(Vector4 v1, Vector4 v2, Vector4 v3,  int color)
         {
-            return (x1 - x2) * (y3 - y1) - (y1 - y2) * (x3 - x1);
-        }
-
-        private void swap(ref int a, ref int b)
-        {
-            int t = a;
-            a = b;
-            b = t;
-        }
-        private void swap(ref float a, ref float b)
-        {
-            float t = a;
-            a = b;
-            b = t;
-        }
-
-        private void DrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, float z, int color)
-        {
-            if (y2 < y1)
+            v1.X = (int)v1.X; v1.Y = (int)v1.Y;
+            v2.X = (int)v2.X; v2.Y = (int)v2.Y;
+            v3.X = (int)v3.X; v3.Y = (int)v3.Y;
+            if (v2.Y < v1.Y)
             {
-                swap(ref y1, ref y2);
-                swap(ref x1, ref x2);
+                Vector4 tmp = v1;
+                v1 = v2;
+                v2 = tmp;
             }
-            if (y3 < y1)
+            if (v3.Y < v1.Y)
             {
-                swap(ref y1, ref y3);
-                swap(ref x1, ref x3);
+                Vector4 tmp = v3;
+                v3 = v1;
+                v1 = tmp;
             }
-            if (y2 > y3)
+            if (v2.Y > v3.Y)
             {
-                swap(ref y2, ref y3);
-                swap(ref x2, ref x3);
+                Vector4 tmp = v2;
+                v2 = v3;
+                v3 = tmp;
             }
             float dx13 = 0, dx12 = 0, dx23 = 0;
-            if (y3 != y1)
+            if (v3.Y != v1.Y)
             {
-                dx13 = x3 - x1;
-                dx13 /= y3 - y1;
+                dx13 = v3.X - v1.X;
+                dx13 /= v3.Y - v1.Y;
             }
-            if (y2 != y1)
+            if (v2.Y != v1.Y)
             {
-                dx12 = x2 - x1;
-                dx12 /= (y2 - y1);
+                dx12 = v2.X - v1.X;
+                dx12 /= (v2.Y - v1.Y);
             }
-            if (y3 != y2)
+            if (v3.Y != v2.Y)
             {
-                dx23 = x3 - x2;
-                dx23 /= (y3 - y2);
+                dx23 = v3.X - v2.X;
+                dx23 /= (v3.Y - v2.Y);
             }
-            float wx1 = x1;
+            float wx1 = v1.X;
             float wx2 = wx1;
             float _dx13 = dx13;
             if (dx13 > dx12)
             {
-                swap(ref dx13, ref dx12);
+                Utility.Swap(ref dx13, ref dx12);
             }
             // растеризуем верхний полутреугольник
-            for (int y = (int)y1; y < (int)y2; y++)
+            for (int y = (int)v1.Y; y < (int)v2.Y; y++)
             {
                 // рисуем горизонтальную линию между рабочими
                 // точками
@@ -166,6 +128,7 @@ namespace Render3D.Render
                 {
                     if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
                     {
+                        var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
                         if (z < _zBuffer[x, y] || _zBuffer[x, y] == 0)
                         {
                             DrawPixel(x, y, color);
@@ -178,19 +141,21 @@ namespace Render3D.Render
             }
             // вырожденный случай, когда верхнего полутреугольника нет
             // надо разнести рабочие точки по оси x, т.к. изначально они совпадают
-            if (y1 == y2)
+            if (v1.Y == v2.Y)
             {
-                wx1 = x1 < x2 ? x1 : x2;
-                wx2 = x1 >= x2 ? x1 : x2;
+                wx1 = v1.X < v2.X ? v1.X : v2.X;
+                wx2 = v1.X >= v2.X ? v1.X : v2.X;
             }
             // упорядочиваем приращения
             // (используем сохраненное приращение)
             if (_dx13 < dx23)
             {
-                swap(ref _dx13, ref dx23);
+                float tmp = _dx13;
+                _dx13 = dx23;
+                dx23 = tmp;
             }
             // растеризуем нижний полутреугольник
-            for (int y = (int)y2; y <= (int)y3; y++)
+            for (int y = (int)v2.Y; y <= (int)v3.Y; y++)
             {
                 // рисуем горизонтальную линию между рабочими
                 // точками
@@ -198,6 +163,7 @@ namespace Render3D.Render
                 {
                     if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
                     {
+                        var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
                         if (z < _zBuffer[x, y] || _zBuffer[x, y] == 0)
                         {
                             DrawPixel(x, y, color);
@@ -210,10 +176,10 @@ namespace Render3D.Render
             }
         }
 
-        private void DrawLine(int x, int y, int x2, int y2, float z, int color = 0x000000)
+        private void DrawLine(int x, int y, int x1, int y1, int color = 0x000000)
         {
-            int w = x2 - x;
-            int h = y2 - y;
+            int w = x1 - x;
+            int h = y1 - y;
             int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
             if (w < 0) dx1 = -1; else if (w > 0) dx1 = 1;
             if (h < 0) dy1 = -1; else if (h > 0) dy1 = 1;

@@ -66,29 +66,24 @@ namespace Render3D
                 new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F), 
                 new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation), 
                 new Vector3(dataContext.XTranslation, dataContext.YTranslation, dataContext.ZTranslation));
-            dataContext.CameraForward = Vector3.Zero;
-            var viewMatrix = Math.Math3D.GetLookAtMatrix(dataContext.Camera.Position, dataContext.Camera.Target, dataContext.Camera.Up, dataContext.Camera.Right);
-            viewMatrix = Math.Math3D.GetInverseMatrix(viewMatrix);
+            var viewMatrix = Math3D.GetViewMatrix(dataContext.Camera.Position, dataContext.Camera.Rotation);
             var projectionMatrix = Math.Math3D.GetPerspectiveProjectionMatrix(dataContext.Camera.FOV, dataContext.Camera.ZNear, dataContext.Camera.ZFar, width / height);
             var viewportMatrix = Math.Math3D.GetViewportMatrix(width, height, 0, 0);
 
-            // Model coodinates -> perspective coodinates
+            // Model -> World
             var transformedModel = model.TransformModel(modelMatrix, true);
-            // RemoveHiddenFaces
+            // Remove hidden faces
             transformedModel = transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
-            // Camera
+            // World -> View
             transformedModel = transformedModel.TransformModel(viewMatrix);
-            // Clip triangles to camera
+            // View -> Clip
             transformedModel = transformedModel.ClipTriangles(
                 new Vector3(0, 0, dataContext.Camera.ZNear),
                 new Vector3(0, 0, 1));
             // 3D -> 2D
             transformedModel = transformedModel.TransformModel(projectionMatrix);
-
-            // Convert to current viewport
             transformedModel = transformedModel.TransformModel(viewportMatrix);
-
-            //Clip triangles to screenbox
+            // 2D -> CLip
             transformedModel = transformedModel.ClipTriangles(
                 new Vector3(0, 0, 0),
                 Vector3.UnitY);
@@ -103,7 +98,7 @@ namespace Render3D
                 -Vector3.UnitX);
 
             //Render
-            _renderer.RenderModel(transformedModel, dataContext.lightDirection);
+            _renderer.RenderModel(transformedModel, dataContext.RenderMode, dataContext.lightDirection);
 
             stopwatch.Stop();
             dataContext.FPS = 1f / ((stopwatch.ElapsedMilliseconds > 0 ? stopwatch.ElapsedMilliseconds : 0.01f) / 1000f);
@@ -144,115 +139,95 @@ namespace Render3D
 
         private void main_canvas_KeyDown(object sender, KeyEventArgs e)
         {
-            Vector3 forward = dataContext.Camera.Forward * 0.1f;
-            forward.X = -forward.X;
-            forward.Y = -forward.Y;
+            var rot = Quaternion.CreateFromYawPitchRoll(dataContext.Camera.Rotation.X, dataContext.Camera.Rotation.Y, dataContext.Camera.Rotation.Z);
+            Vector3 forward = Vector3.Transform(Vector3.UnitZ, rot) * 0.1f;
+            Vector3 right = Vector3.Transform(Vector3.UnitZ, rot) * 0.1f;
 
-            Vector3 direction = Vector3.Zero;
-            Vector3 cameraRotation = Vector3.Zero;
+            //Move
             if (e.Key == Key.W)
             {
-                direction += forward;
+                dataContext.Camera.Position += forward;
             }
             if (e.Key == Key.S)
             {
-                direction -= forward;
-            }
-            if (e.Key == Key.A)
-            {
-                cameraRotation.Y -= RotationSpeed;
-            }
-            if (e.Key == Key.D)
-            {
-                cameraRotation.Y += RotationSpeed;
-            }
-            if (e.Key == Key.Q)
-            {
-                cameraRotation.X -= RotationSpeed;
-            }
-            if (e.Key == Key.E)
-            {
-                cameraRotation.X += RotationSpeed;
+                dataContext.Camera.Position -= forward;
             }
 
+            //Rotate
             if (e.Key == Key.Up)
             {
-                dataContext.XRotation += RotationSpeed * 15;
+                dataContext.Camera.Rotation -= new Vector3(0, 0.05f, 0);
             }
             if (e.Key == Key.Down)
             {
-                dataContext.XRotation -= RotationSpeed * 15;
+                dataContext.Camera.Rotation += new Vector3(0, 0.05f, 0);
             }
             if (e.Key == Key.Left)
             {
-                dataContext.YRotation -= RotationSpeed * 15;
+                dataContext.Camera.Rotation += new Vector3(0.05f, 0, 0);
             }
             if (e.Key == Key.Right)
             {
-                dataContext.YRotation += RotationSpeed * 15;
+                dataContext.Camera.Rotation -= new Vector3(0.05f, 0, 0);
             }
 
-            dataContext.Camera.Move(direction);
-            dataContext.Camera.Rotate(cameraRotation);
-            
+            //Scale model
+            if (e.Key == Key.Add)
+            {
+                dataContext.XScale += 5;
+                dataContext.YScale += 5;
+                dataContext.ZScale += 5;
+            }
+            if (e.Key == Key.Subtract)
+            {
+                dataContext.XScale -= 5;
+                dataContext.YScale -= 5;
+                dataContext.ZScale -= 5;
+            }
+
+            // Utils
+            if (e.Key == Key.F1)
+            {
+                dataContext.RenderMode = RenderMode.Rasterization;
+            }
+            if (e.Key == Key.F2)
+            {
+                dataContext.RenderMode = RenderMode.Wireframe;
+            }
+
             RenderModel();
         }
 
         private void main_canvas_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            /*double width = (float)main_canvas.ActualWidth;
-            double height = (float)main_canvas.ActualHeight;
-            Point position = Mouse.GetPosition(main_canvas);
-            initialPosition = initialPosition ?? position;
-            double xDir = (position.X - initialPosition.Value.X) / (width / 2);
-            double yDir = (position.Y - initialPosition.Value.Y) / (height / 2);
-
             if (Mouse.LeftButton == MouseButtonState.Pressed)
             {
-                Matrix4x4 rotationMatrix = MatrixTransformations.GetRotationMatrix(new Quaternion((MathF.PI / 180) * -dataContext.XRotation, (MathF.PI / 180) * -dataContext.YRotation, (MathF.PI / 180) * -dataContext.ZRotation, 0));
-                Vector3 forward = Vector3.Transform(dataContext.Camera.Forward, rotationMatrix);
-                Vector3 right = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, forward));
-                Vector3 up = Vector3.Cross(forward, right);
-
-                dataContext.XTranslation -= dataContext.Camera.Speed * (float)xDir * 5;
-                dataContext.YTranslation -= dataContext.Camera.Speed * (float)yDir * 5;
+                Point position = Mouse.GetPosition(main_canvas);
+                initialPosition = initialPosition ?? position;
+                double xDir = (position.X - initialPosition.Value.X) / (main_canvas.ActualWidth / 2.0);
+                double yDir = -(position.Y - initialPosition.Value.Y) / (main_canvas.ActualHeight / 2.0);
+                dataContext.Camera.Rotation += new Vector3((float)xDir, (float)yDir, 0);
 
                 RenderModel();
 
                 initialPosition = position;
             }
-            if (Mouse.RightButton == MouseButtonState.Pressed)
-            {
-                Quaternion rotationDirection = Quaternion.Identity;
-                rotationDirection.Y += dataContext.Camera.RotationSpeed * (float)xDir * 20;
-                rotationDirection.X -= dataContext.Camera.RotationSpeed * (float)yDir * 20;
-
-                Vector3 forward = dataContext.Camera.Forward;
-                Quaternion quaternion = MatrixTransformations.GetRotationWorldAngles(forward, rotationDirection);
-                dataContext.XRotation += quaternion.X;
-                dataContext.YRotation += quaternion.Y;
-                dataContext.ZRotation += quaternion.Z;
-                RenderModel();
-                initialPosition = position;
-            }*/
         }
 
         private void main_canvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            /*if (Mouse.LeftButton == MouseButtonState.Pressed || Mouse.RightButton == MouseButtonState.Pressed)
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
             {
                 initialPosition = Mouse.GetPosition(main_canvas);
-            }*/
+            }
         }
 
         private void main_canvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            /*if (Mouse.LeftButton == MouseButtonState.Released || Mouse.RightButton == MouseButtonState.Released)
+            if (Mouse.LeftButton == MouseButtonState.Released)
             {
-                double width = (float)main_canvas.ActualWidth;
-                double height = (float)main_canvas.ActualHeight;
                 initialPosition = null;
-            }*/
+            }
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
