@@ -19,7 +19,15 @@ namespace Render3D.Models
         public Model(ObjectModel loadedModel)
         {
             FacesToTriangles(loadedModel);
-        } 
+        }
+
+        public Model(Model model)
+        {
+            if (model.Triangles != null)
+            {
+                Triangles = (Triangle[])model.Triangles.Clone();
+            }
+        }
 
         private void FacesToTriangles(ObjectModel loadedModel)
         {
@@ -31,10 +39,14 @@ namespace Render3D.Models
                     var v1 = loadedModel.Vertices[face[0].v - 1];
                     var v2 = loadedModel.Vertices[face[i].v - 1];
                     var v3 = loadedModel.Vertices[face[i + 1].v - 1];
+                    var n1 = loadedModel.VertexNormals[face[0].vn - 1];
+                    var n2 = loadedModel.VertexNormals[face[i].vn - 1];
+                    var n3 = loadedModel.VertexNormals[face[i + 1].vn - 1];
                     triangles.Add(new Triangle()
                     {
                         Points = new Vector4[] { v1, v2, v3 },
-                        Normal = loadedModel.VertexNormals[face[0].vn - 1]
+                        Normals = new Vector3[] { n1, n2, n3 },
+                        Colors = new int[3] {0xFFFFFF, 0xFFFFFF, 0xFFFFFF}
                     });
                 }
             }
@@ -48,9 +60,9 @@ namespace Render3D.Models
                 Triangles = new Triangle[Triangles.Length]
             };
 
-            for (int i = 0; i < Triangles.Length; i++)
+            Parallel.For(0, Triangles.Length, (i) =>
             {
-                newModel.Triangles[i] = new Triangle() { Points = new Vector4[3], Normal = Triangles[i].Normal };
+                newModel.Triangles[i] = new Triangle(Triangles[i]);
                 for (int j = 0; j < Triangles[i].Points.Length; j++)
                 {
                     newModel.Triangles[i].Points[j] = Vector4.Transform(Triangles[i].Points[j], transform);
@@ -58,9 +70,12 @@ namespace Render3D.Models
                 }
                 if (transformNormals)
                 {
-                    newModel.Triangles[i].Normal = Vector3.TransformNormal(newModel.Triangles[i].Normal, transform);
+                    for (int j = 0; j < Triangles[i].Normals.Length; j++)
+                    {
+                        newModel.Triangles[i].Normals[j] = Vector3.TransformNormal(Triangles[i].Normals[j], transform);
+                    }
                 }
-            }
+            });
             return newModel;
         }
 
@@ -71,7 +86,7 @@ namespace Render3D.Models
 
             for (int i = 0; i < Triangles.Length; i++)
             {
-                var n = Triangles[i].Normal;
+                var n = (Triangles[i].Normals[0] + Triangles[i].Normals[1] + Triangles[i].Normals[2]) / 3;
                 var v = Triangles[i].Points[0];
                 if (Vector3.Dot(n, v.ToVector3() - cameraPosition) < 0)
                 {

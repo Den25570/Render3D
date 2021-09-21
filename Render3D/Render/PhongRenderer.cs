@@ -18,7 +18,7 @@ using System.Windows.Media.Imaging;
 
 namespace Render3D.Render
 {
-    public class TriangleRenderer : IRenderer
+    public class PhongRenderer : IRenderer
     {
         private WriteableBitmap _bitmap;
         float[] _zBuffer;
@@ -51,10 +51,7 @@ namespace Render3D.Render
                 foreach (var triangle in model.Triangles)
                 {
                     //Draw triangle
-                    var n = (triangle.Normals[0] + triangle.Normals[1] + triangle.Normals[2]) / 3;
-                    var dt = MathF.Max((Vector3.Dot(n, world.LightDirection) + 1) / 2, 0.25f);
-                    var color = (int)(0xFF * dt) * 0x100 * 0x100 + (int)(0xFF * dt) * 0x100 + (int)(0xFF * dt);
-                    DrawTriangle(triangle.Points[0], triangle.Points[1], triangle.Points[2], color);
+                    DrawTriangle(triangle, world);
                 }
                 _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             }
@@ -65,11 +62,11 @@ namespace Render3D.Render
 
         }
 
-        private void DrawTriangle(Vector4 v1, Vector4 v2, Vector4 v3,  int color)
+        private void DrawTriangle(Triangle triangle, World world)
         {
-            v1.X = (int)MathF.Ceiling(v1.X); v1.Y = (int)MathF.Ceiling(v1.Y);
-            v2.X = (int)MathF.Ceiling(v2.X); v2.Y = (int)MathF.Ceiling(v2.Y);
-            v3.X = (int)MathF.Ceiling(v3.X); v3.Y = (int)MathF.Ceiling(v3.Y);
+            var v1 = triangle.Points[0]; v1.X = (int)MathF.Ceiling(v1.X); v1.Y = (int)MathF.Ceiling(v1.Y);
+            var v2 = triangle.Points[1]; v2.X = (int)MathF.Ceiling(v2.X); v2.Y = (int)MathF.Ceiling(v2.Y);
+            var v3 = triangle.Points[2]; v3.X = (int)MathF.Ceiling(v3.X); v3.Y = (int)MathF.Ceiling(v3.Y);
             if (v2.Y < v1.Y)
             {
                 Vector4 tmp = v1;
@@ -120,9 +117,10 @@ namespace Render3D.Render
                 {
                     if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
                     {
-                        var z = Math3D.InterpolateZ(v1, v2, v3, x, y) * 100;
+                        var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
                         if (z < _zBuffer[x * _height + y])
                         {
+                            var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, y, 0, 1));
                             DrawPixel(x, y, color);
                             _zBuffer[x * _height + y] = z;
                         }
@@ -155,9 +153,10 @@ namespace Render3D.Render
                 {
                     if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
                     {
-                        var z = Math3D.InterpolateZ(v1, v2, v3, x, y) * 100;
+                        var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
                         if (z < _zBuffer[x * _height + y])
                         {
+                            var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, y, 0, 1));
                             DrawPixel(x, y, color);
                             _zBuffer[x * _height + y] = z;
                         }

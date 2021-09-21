@@ -28,12 +28,17 @@ namespace Render3D
     /// </summary>
     public partial class MainWindow : Window
     {
+        // Services
         private IParser _parser;
+        private Dictionary<RenderMode, IRenderer> _renderers;
         private IRenderer _renderer;
 
+        // Data
         private Model model;
+        private World world;
         private ApplicationViewModel dataContext;
 
+        // Control params
         private Point? initialPosition;
         public float Speed = 0.5f;
         public float RotationSpeed = 0.05f;
@@ -44,7 +49,18 @@ namespace Render3D
             _parser = new OBJParser();
             DataContext = new ApplicationViewModel();
             dataContext = DataContext as ApplicationViewModel;
-            _renderer = new TriangleRenderer();
+
+            _renderers = new Dictionary<RenderMode, IRenderer>()
+            {
+                {RenderMode.Phong, new PhongRenderer() },
+                {RenderMode.SimpleTriangle, new TriangleRenderer() },
+                {RenderMode.Wireframe, new WireframeRenderer() },
+            };
+            _renderer = _renderers[dataContext.RenderMode];
+            world = new World()
+            {
+                LightDirection = dataContext.lightDirection,
+            };
 
             InitializeComponent();
         }
@@ -98,7 +114,7 @@ namespace Render3D
                 -Vector3.UnitX);
 
             //Render
-            _renderer.RenderModel(transformedModel, dataContext.RenderMode, dataContext.lightDirection);
+            _renderer.RenderModel(transformedModel, world);
 
             stopwatch.Stop();
             dataContext.FPS = 1f / ((stopwatch.ElapsedMilliseconds > 0 ? stopwatch.ElapsedMilliseconds : 0.01f) / 1000f);
@@ -156,19 +172,19 @@ namespace Render3D
             //Rotate
             if (e.Key == Key.Up)
             {
-                dataContext.Camera.Rotation -= new Vector3(0, 0.05f, 0);
+                dataContext.Camera.Rotate(new Vector3(0, 0.05f, 0));
             }
             if (e.Key == Key.Down)
             {
-                dataContext.Camera.Rotation += new Vector3(0, 0.05f, 0);
+                dataContext.Camera.Rotate(new Vector3(0, -0.05f, 0));
             }
             if (e.Key == Key.Left)
             {
-                dataContext.Camera.Rotation += new Vector3(0.05f, 0, 0);
+                dataContext.Camera.Rotate(new Vector3(0.05f, 0, 0));
             }
             if (e.Key == Key.Right)
             {
-                dataContext.Camera.Rotation -= new Vector3(0.05f, 0, 0);
+                dataContext.Camera.Rotate(new Vector3(-0.05f, 0, 0));
             }
 
             //Scale model
@@ -188,11 +204,21 @@ namespace Render3D
             // Utils
             if (e.Key == Key.F1)
             {
-                dataContext.RenderMode = RenderMode.Rasterization;
+                dataContext.RenderMode = RenderMode.Phong;
+                _renderer = _renderers[dataContext.RenderMode];
+                _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
             }
             if (e.Key == Key.F2)
             {
+                dataContext.RenderMode = RenderMode.SimpleTriangle;
+                _renderer = _renderers[dataContext.RenderMode];
+                _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
+            }
+            if (e.Key == Key.F3)
+            {
                 dataContext.RenderMode = RenderMode.Wireframe;
+                _renderer = _renderers[dataContext.RenderMode];
+                _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
             }
 
             RenderModel();
@@ -206,7 +232,7 @@ namespace Render3D
                 initialPosition = initialPosition ?? position;
                 double xDir = (position.X - initialPosition.Value.X) / (main_canvas.ActualWidth / 2.0);
                 double yDir = -(position.Y - initialPosition.Value.Y) / (main_canvas.ActualHeight / 2.0);
-                dataContext.Camera.Rotation += new Vector3((float)xDir, (float)yDir, 0);
+                dataContext.Camera.Rotate(new Vector3((float)xDir, (float)yDir, 0));
 
                 RenderModel();
 

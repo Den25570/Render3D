@@ -65,7 +65,7 @@ namespace Render3D
             ZScale = 100;
 
             LightDirection = -Vector3.UnitZ;
-            RenderMode = RenderMode.Rasterization;
+            RenderMode = RenderMode.Phong;
 
             camera = new Camera()
             {

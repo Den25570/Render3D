@@ -273,28 +273,61 @@ namespace Render3D.Math
             }
             else if (insidePoints.Count() == 1 && outsidePoints.Count() == 2)
             {
-                var newTriangle = new Triangle() { Normal = triangle.Normal };
+                //TODO: Interpolate normal
+                var newTriangle = new Triangle();
+
                 newTriangle.Points = new Vector4[]{
                     insidePoints[0],
                     new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[0].ToVector3(), outsidePoints[0].ToVector3()), 1),
                     new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[0].ToVector3(), outsidePoints[1].ToVector3()), 1)
                 };
+                newTriangle.Normals = new Vector3[]{
+                    triangle.Normals[0],
+                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle.Points[1]),
+                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle.Points[2]),
+                };
+                newTriangle.Colors = new int[]{
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[0]),
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[1]),
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[2]),
+                };
                 result.Add(newTriangle);
             }
             else if (insidePoints.Count() == 2 && outsidePoints.Count() == 1)
             {
-                var newTriangle1 = new Triangle() { Normal = triangle.Normal };
-                var newTriangle2 = new Triangle() { Normal = triangle.Normal };
+                //TODO: Interpolate normal
+                var newTriangle1 = new Triangle();
+                var newTriangle2 = new Triangle();
 
                 newTriangle1.Points = new Vector4[]{
                     insidePoints[0],
                     insidePoints[1],
                     new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[0].ToVector3(), outsidePoints[0].ToVector3()), 1)
                 };
+                newTriangle1.Colors = new int[]{
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[0]),
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[1]),
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[2]),
+                };
+                newTriangle1.Normals = new Vector3[]{
+                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle1.Points[0]),
+                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle1.Points[1]),
+                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle1.Points[2]),
+                };
                 newTriangle2.Points = new Vector4[]{
                     insidePoints[1],
                     newTriangle1.Points[2],
                     new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[1].ToVector3(), outsidePoints[0].ToVector3()), 1)
+                };
+                newTriangle2.Normals = new Vector3[]{
+                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle2.Points[0]),
+                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle2.Points[1]),
+                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle2.Points[2]),
+                };
+                newTriangle2.Colors = new int[]{
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[0]),
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[1]),
+                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[2]),
                 };
                 result.Add(newTriangle1);
                 result.Add(newTriangle2);
@@ -307,6 +340,29 @@ namespace Render3D.Math
             return (x1 - x2) * (y3 - y1) - (y1 - y2) * (x3 - x1);
         }
 
+        public static int InterpolateColor(Vector4 v1, Vector4 v2, Vector4 v3, int i1, int i2, int i3, Vector4 v)
+        {
+            var bX = ((v2.Y - v3.Y) * (v.X - v3.X) + (v3.X - v2.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var bY = ((v3.Y - v1.Y) * (v.X - v3.X) + (v1.X - v3.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var bZ = 1 - bX - bY;
+            return (int)MathF.Min(MathF.Max((int)(i1 * bX + i2 * bY + i3 * bZ), 0), 0xFFFFFF);
+        }
+
+        public static Vector3 InterpolateNormal(Vector4 v1, Vector4 v2, Vector4 v3, Vector3 n1, Vector3 n2, Vector3 n3, Vector4 v)
+        {
+            var bX = ((v2.Y - v3.Y) * (v.X - v3.X) + (v3.X - v2.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var bY = ((v3.Y - v1.Y) * (v.X - v3.X) + (v1.X - v3.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var bZ = 1 - bX - bY;
+            return Vector3.Normalize(n1 * bX + n2 * bY + n3 * bZ);
+        }
+        public static float InterpolateZ(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, int x, int y)
+        {
+            var bX = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+            var bY = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+            var bZ = 1 - bX - bY;
+            return z1 * bX + z2 * bY + z3 * bZ;
+        }
+
         public static float InterpolateZ(Vector3 v1, Vector3 v2, Vector3 v3, int x, int y)
         {
             var bX = ((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
@@ -317,9 +373,9 @@ namespace Render3D.Math
 
         public static float InterpolateZ(Vector4 v1, Vector4 v2, Vector4 v3, int x, int y)
         {
-            var W1 = MathF.Max(((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y)),0);
-            var W2 = MathF.Max(((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y)), 0);
-            var W3 = MathF.Max(1 - W1 - W2,0);
+            var W1 = ((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var W2 = ((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var W3 = 1 - W1 - W2;
             return v1.Z * W1 + v2.Z * W2 + v3.Z * W3;
         }
     }

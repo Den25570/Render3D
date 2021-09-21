@@ -8,7 +8,8 @@ namespace Render3D.Render
 {
     public enum RenderMode
     {
-        Rasterization,
+        Phong,
+        SimpleTriangle,
         Wireframe,
     }
 }

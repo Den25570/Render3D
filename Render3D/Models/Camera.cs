@@ -24,5 +24,11 @@ namespace Render3D.Models
             Position = Vector3.UnitZ;
             Rotation = Vector3.Zero;
         }
+
+        public void Rotate(Vector3 rotation)
+        {
+            Rotation += rotation;
+            Rotation = new Vector3(Rotation.X, MathF.Sign(Rotation.Y) * MathF.Min(MathF.Abs(Rotation.Y), MathF.PI / 2), Rotation.Z);
+        }
     }
 }
