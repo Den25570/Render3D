@@ -52,7 +52,12 @@ namespace Render3D.Render
                 {
                     //Draw triangle
                     var n = (triangle.Normals[0] + triangle.Normals[1] + triangle.Normals[2]) / 3;
-                    var dt = MathF.Max((Vector3.Dot(n, world.LightDirection) + 1) / 2, 0.25f);
+
+                    var dt = 0f;
+                    foreach (var source in world.Lights)
+                        dt += MathF.Max(Vector3.Dot(n, source), 0f);
+                    dt = MathF.Min(dt, 1f);
+
                     var color = (int)(0xFF * dt) * 0x100 * 0x100 + (int)(0xFF * dt) * 0x100 + (int)(0xFF * dt);
                     DrawTriangle(triangle.Points[0], triangle.Points[1], triangle.Points[2], color);
                 }

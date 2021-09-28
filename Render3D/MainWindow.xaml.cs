@@ -59,7 +59,9 @@ namespace Render3D
             _renderer = _renderers[dataContext.RenderMode];
             world = new World()
             {
-                LightDirection = dataContext.lightDirection,
+                Lights = new Vector3[] { dataContext.lightDirection },
+                Camera = dataContext.Camera,
+                BackgroundLight = 0.1f,
             };
 
             InitializeComponent();
@@ -67,54 +69,60 @@ namespace Render3D
 
         private void RenderModel()
         {
-            if (model == null)
-                return;
+            var transformedModel = new Model(model);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
+            /*stopwatch.Stop();
+            var stopC = stopwatch.ElapsedMilliseconds;
+            stopwatch.Restart();*/
 
             float width = (float)main_canvas.ActualWidth;
             float height = (float)main_canvas.ActualHeight;
 
             if (!_renderer.HasBitmap)
-                _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
+                _renderer.CreateBitmap(main_canvas, (int)width, (int)height);
 
-            var modelMatrix = Math.Math3D.GetTransformationMatrix(
-                new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F), 
-                new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation), 
+            var modelMatrix = Math3D.GetTransformationMatrix(
+                new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F),
+                new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation),
                 new Vector3(dataContext.XTranslation, dataContext.YTranslation, dataContext.ZTranslation));
             var viewMatrix = Math3D.GetViewMatrix(dataContext.Camera.Position, dataContext.Camera.Rotation);
-            var projectionMatrix = Math.Math3D.GetPerspectiveProjectionMatrix(dataContext.Camera.FOV, dataContext.Camera.ZNear, dataContext.Camera.ZFar, width / height);
-            var viewportMatrix = Math.Math3D.GetViewportMatrix(width, height, 0, 0);
+            var projectionMatrix = Math3D.GetPerspectiveProjectionMatrix(dataContext.Camera.FOV, dataContext.Camera.ZNear, dataContext.Camera.ZFar, width / height);
+            var viewportMatrix = Math3D.GetViewportMatrix(width, height, 0, 0);
 
             // Model -> World
-            var transformedModel = model.TransformModel(modelMatrix, true);
+            
+            transformedModel.TransformModel(modelMatrix, true);
+
             // Remove hidden faces
-            transformedModel = transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
+            transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
+
             // World -> View
-            transformedModel = transformedModel.TransformModel(viewMatrix);
+            transformedModel.TransformModel(viewMatrix);
+            transformedModel.CalculateColor(world);
+
             // View -> Clip
-            transformedModel = transformedModel.ClipTriangles(
+            transformedModel.ClipTriangles(
                 new Vector3(0, 0, dataContext.Camera.ZNear),
                 new Vector3(0, 0, 1));
             // 3D -> 2D
-            transformedModel = transformedModel.TransformModel(projectionMatrix);
-            transformedModel = transformedModel.TransformModel(viewportMatrix);
+            transformedModel.TransformModel(projectionMatrix);
+            transformedModel.TransformModel(viewportMatrix);
             // 2D -> CLip
-            transformedModel = transformedModel.ClipTriangles(
-                new Vector3(0, 0, 0),
-                Vector3.UnitY);
-            transformedModel = transformedModel.ClipTriangles(
-                new Vector3(0, height - 1, 0),
-                -Vector3.UnitY);
-            transformedModel = transformedModel.ClipTriangles(
-                new Vector3(0, 0, 0),
-                Vector3.UnitX);
-            transformedModel = transformedModel.ClipTriangles(
+            transformedModel.ClipTriangles(
+                 new Vector3(0, 0, 0),
+                 Vector3.UnitY);
+            transformedModel.ClipTriangles(
+                 new Vector3(0, height - 1, 0),
+                 -Vector3.UnitY);
+            transformedModel.ClipTriangles(
+                 new Vector3(0, 0, 0),
+                 Vector3.UnitX);
+            transformedModel.ClipTriangles(
                 new Vector3(width - 1, 0, 0),
                 -Vector3.UnitX);
-
             //Render
-            _renderer.RenderModel(transformedModel, world);
+            _renderer.RenderModel(transformedModel, world);;
 
             stopwatch.Stop();
             dataContext.FPS = 1f / ((stopwatch.ElapsedMilliseconds > 0 ? stopwatch.ElapsedMilliseconds : 0.01f) / 1000f);

@@ -38,34 +38,34 @@ namespace Render3D.Parser
                             case "v":
                                 model.Vertices.Add(new Vector4()
                                 {
-                                    X = float.Parse(items[1].Replace('.', ',')),
-                                    Y = float.Parse(items[2].Replace('.', ',')),
-                                    Z = float.Parse(items[3].Replace('.', ',')),
-                                    W = items.Length >= 5 ? float.Parse(items[4].Replace('.', ',')) : 1.0F,
+                                    X = float.Parse(items[1]),
+                                    Y = float.Parse(items[2]),
+                                    Z = float.Parse(items[3]),
+                                    W = items.Length >= 5 ? float.Parse(items[4]) : 1.0F,
                                 });
                                 break;
                             case "vt":
                                 model.TextureVertices.Add(new Vector3()
                                 {
-                                    X = float.Parse(items[1].Replace('.', ',')),
-                                    Y = items.Length >= 3 ? float.Parse(items[2].Replace('.', ',')) : 0.0F,
-                                    Z = items.Length >= 4 ? float.Parse(items[3].Replace('.', ',')) : 0.0F,
+                                    X = float.Parse(items[1]),
+                                    Y = items.Length >= 3 ? float.Parse(items[2]) : 0.0F,
+                                    Z = items.Length >= 4 ? float.Parse(items[3]) : 0.0F,
                                 });
                                 break;
                             case "vn":
                                 model.VertexNormals.Add(new Vector3()
                                 {
-                                    X = float.Parse(items[1].Replace('.', ',')),
-                                    Y = float.Parse(items[2].Replace('.', ',')),
-                                    Z = float.Parse(items[3].Replace('.', ',')),
+                                    X = float.Parse(items[1]),
+                                    Y = float.Parse(items[2]),
+                                    Z = float.Parse(items[3]),
                                 });
                                 break;
                             case "vp":
                                 model.SpaceVertices.Add(new Vector3()
                                 {
-                                    X = float.Parse(items[1].Replace('.', ',')),
-                                    Y = items.Length >= 3 ? float.Parse(items[2].Replace('.', ',')) : 0.0F,
-                                    Z = items.Length >= 4 ? float.Parse(items[3].Replace('.', ',')) : 0.0F,
+                                    X = float.Parse(items[1]),
+                                    Y = items.Length >= 3 ? float.Parse(items[2]) : 0.0F,
+                                    Z = items.Length >= 4 ? float.Parse(items[3]) : 0.0F,
                                 });
                                 break;
                             case "f":

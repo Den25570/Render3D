@@ -9,13 +9,11 @@ namespace Render3D.Models
 {
     public class World
     {
-        public Vector3 LightDirection { get; set; }
+        public Vector3[] Lights { get; set; }
 
         public float BackgroundLight { get; set; }
 
         public float MirrorLight { get; set; }
-
-        public float DiffuseLight { get; set; }
 
         public Camera Camera { get; set; }
     }

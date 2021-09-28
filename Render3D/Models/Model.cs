@@ -23,67 +23,91 @@ namespace Render3D.Models
 
         public Model(Model model)
         {
-            if (model.Triangles != null)
+            if (model != null && model.Triangles != null)
             {
-                Triangles = (Triangle[])model.Triangles.Clone();
+                Triangles = new Triangle[model.Triangles.Length];
+                for(int i = 0; i < Triangles.Length; i++)
+                {
+                    Triangles[i] = new Triangle(model.Triangles[i]);
+                }
             }
+        }
+
+        // TODO Add lights color
+        // TODO Add material/texture
+        public void CalculateColor(World world)
+        {
+            Parallel.For(0, Triangles.Length, (i) =>
+            {
+                for(int j = 0; j < Triangles[i].Points.Length; j++)
+                {
+                    var result = new Vector3();
+                    for (int li = 0; li < world.Lights.Length; li++)
+                    {
+                        var l = Vector3.Normalize(world.Lights[li] - Triangles[i].Points[j].ToVector3());
+                        var e = Vector3.Normalize(-Triangles[i].Points[j].ToVector3());
+                        var r = Vector3.Normalize(-Vector3.Reflect(l, Triangles[i].Normals[j]));
+
+                        Vector3 Iamb = Triangles[i].Colors[j] * world.BackgroundLight;
+                        Vector3 Idiff = Triangles[i].Colors[j] * MathF.Max(Vector3.Dot(Triangles[i].Normals[j], l), 0.0f);
+                        Idiff = Vector3.Clamp(Idiff, Vector3.Zero, Vector3.One);
+
+                        Vector3 Ispec = Triangles[i].Colors[j] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), 15);
+                        Ispec = Vector3.Clamp(Ispec, Vector3.Zero, Vector3.One);
+
+                        result += Iamb + Idiff + Ispec;
+                    }
+                    Triangles[i].Colors[j] = result;
+                }
+            });
         }
 
         private void FacesToTriangles(ObjectModel loadedModel)
         {
             List<Triangle> triangles = new List<Triangle>();
-            foreach (var face in loadedModel.Faces)
+            for (int i = 1; i < loadedModel.Faces.Count(); i++)
             {
-                for(int i = 1; i < face.Count() - 1; i++)
+                for(int j = 1; j < loadedModel.Faces[i].Count() - 1; j++)
                 {
-                    var v1 = loadedModel.Vertices[face[0].v - 1];
-                    var v2 = loadedModel.Vertices[face[i].v - 1];
-                    var v3 = loadedModel.Vertices[face[i + 1].v - 1];
-                    var n1 = loadedModel.VertexNormals[face[0].vn - 1];
-                    var n2 = loadedModel.VertexNormals[face[i].vn - 1];
-                    var n3 = loadedModel.VertexNormals[face[i + 1].vn - 1];
+                    var v1 = loadedModel.Vertices[loadedModel.Faces[i][0].v - 1];
+                    var v2 = loadedModel.Vertices[loadedModel.Faces[i][j].v - 1];
+                    var v3 = loadedModel.Vertices[loadedModel.Faces[i][j + 1].v - 1];
+                    var n1 = loadedModel.VertexNormals[loadedModel.Faces[i][0].vn - 1];
+                    var n2 = loadedModel.VertexNormals[loadedModel.Faces[i][j].vn - 1];
+                    var n3 = loadedModel.VertexNormals[loadedModel.Faces[i][j + 1].vn - 1];
                     triangles.Add(new Triangle()
                     {
                         Points = new Vector4[] { v1, v2, v3 },
                         Normals = new Vector3[] { n1, n2, n3 },
-                        Colors = new int[3] {0xFFFFFF, 0xFFFFFF, 0xFFFFFF}
+                        Colors = new Vector3[3] { Vector3.One, Vector3.One, Vector3.One }
                     });
                 }
             }
             Triangles = triangles.ToArray();
         }
 
-        public Model TransformModel(Matrix4x4 transform, bool transformNormals = false)
+        public void TransformModel(Matrix4x4 transform, bool transformNormals = false)
         {
-            Model newModel = new Model()
-            {
-                Triangles = new Triangle[Triangles.Length]
-            };
-
             Parallel.For(0, Triangles.Length, (i) =>
             {
-                newModel.Triangles[i] = new Triangle(Triangles[i]);
                 for (int j = 0; j < Triangles[i].Points.Length; j++)
                 {
-                    newModel.Triangles[i].Points[j] = Vector4.Transform(Triangles[i].Points[j], transform);
-                    newModel.Triangles[i].Points[j] /= newModel.Triangles[i].Points[j].W;
+                    Triangles[i].Points[j] = Vector4.Transform(Triangles[i].Points[j], transform);
+                    Triangles[i].Points[j] /= Triangles[i].Points[j].W;
                 }
                 if (transformNormals)
                 {
                     for (int j = 0; j < Triangles[i].Normals.Length; j++)
                     {
-                        newModel.Triangles[i].Normals[j] = Vector3.TransformNormal(Triangles[i].Normals[j], transform);
+                        Triangles[i].Normals[j] = Vector3.TransformNormal(Triangles[i].Normals[j], transform);
                     }
                 }
             });
-            return newModel;
         }
 
-        public Model RemoveHiddenFaces(Vector3 cameraPosition)
+        public void RemoveHiddenFaces(Vector3 cameraPosition)
         {
             var visibleTriangles = new List<Triangle>();
-            Model newModel = new Model() {};
-
             for (int i = 0; i < Triangles.Length; i++)
             {
                 var n = (Triangles[i].Normals[0] + Triangles[i].Normals[1] + Triangles[i].Normals[2]) / 3;
@@ -93,23 +117,18 @@ namespace Render3D.Models
                     visibleTriangles.Add(new Triangle(Triangles[i])) ;
                 }
             }
-            newModel.Triangles = visibleTriangles.ToArray();
-            return newModel;
+            Triangles = visibleTriangles.ToArray();
         }
 
-        public Model ClipTriangles(Vector3 plane, Vector3 planeNormal)
+        public void ClipTriangles(Vector3 plane, Vector3 planeNormal)
         {
             var triangles = new List<Triangle>();
-            Model newModel = new Model() { };
-
             for (int i = 0; i < Triangles.Length; i++)
             {
                 var newTriangles = Math3D.ClipTriangle(plane, planeNormal, Triangles[i]);
                 triangles.AddRange(newTriangles);
             }
-
-            newModel.Triangles = triangles.ToArray();
-            return newModel;
+            Triangles = triangles.ToArray();
         }
     }
 }

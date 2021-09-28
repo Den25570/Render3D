@@ -286,7 +286,7 @@ namespace Render3D.Math
                     InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle.Points[1]),
                     InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle.Points[2]),
                 };
-                newTriangle.Colors = new int[]{
+                newTriangle.Colors = new Vector3[]{
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[0]),
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[1]),
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[2]),
@@ -304,7 +304,7 @@ namespace Render3D.Math
                     insidePoints[1],
                     new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[0].ToVector3(), outsidePoints[0].ToVector3()), 1)
                 };
-                newTriangle1.Colors = new int[]{
+                newTriangle1.Colors = new Vector3[]{
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[0]),
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[1]),
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[2]),
@@ -324,7 +324,7 @@ namespace Render3D.Math
                     InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle2.Points[1]),
                     InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle2.Points[2]),
                 };
-                newTriangle2.Colors = new int[]{
+                newTriangle2.Colors = new Vector3[]{
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[0]),
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[1]),
                     InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[2]),
@@ -340,12 +340,13 @@ namespace Render3D.Math
             return (x1 - x2) * (y3 - y1) - (y1 - y2) * (x3 - x1);
         }
 
-        public static int InterpolateColor(Vector4 v1, Vector4 v2, Vector4 v3, int i1, int i2, int i3, Vector4 v)
+        public static Vector3 InterpolateColor(Vector4 v1, Vector4 v2, Vector4 v3, Vector3 i1, Vector3 i2, Vector3 i3, Vector4 v)
         {
             var bX = ((v2.Y - v3.Y) * (v.X - v3.X) + (v3.X - v2.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
             var bY = ((v3.Y - v1.Y) * (v.X - v3.X) + (v1.X - v3.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
             var bZ = 1 - bX - bY;
-            return (int)MathF.Min(MathF.Max((int)(i1 * bX + i2 * bY + i3 * bZ), 0), 0xFFFFFF);
+
+            return i1 * bX + i2 * bY + i3 * bZ;
         }
 
         public static Vector3 InterpolateNormal(Vector4 v1, Vector4 v2, Vector4 v3, Vector3 n1, Vector3 n2, Vector3 n3, Vector4 v)

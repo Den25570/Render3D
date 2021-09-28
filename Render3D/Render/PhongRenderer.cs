@@ -48,10 +48,10 @@ namespace Render3D.Render
                 Array.Fill(_zBuffer, float.MaxValue);
                 _bitmap.Clear(System.Windows.Media.Color.FromRgb(0, 0, 0));
 
-                foreach (var triangle in model.Triangles)
+                for(int i = 0; i < model.Triangles.Length; i++)
                 {
                     //Draw triangle
-                    DrawTriangle(triangle, world);
+                    DrawTriangle(model.Triangles[i], world);
                 }
                 _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             }
@@ -167,14 +167,14 @@ namespace Render3D.Render
             }
         }
 
-        private void DrawPixel(int x, int y, int color = 0x00000000)
+        private void DrawPixel(int x, int y, Vector3 color)
         {
             unsafe
             {
                 IntPtr pBackBuffer = _bitmap.BackBuffer;
                 pBackBuffer += y * _bitmap.BackBufferStride;
                 pBackBuffer += x * 4;
-                *((int*)pBackBuffer) = color;
+                *((int*)pBackBuffer) = color.ToRGB();
             }
         }
     }

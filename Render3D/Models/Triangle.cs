@@ -13,7 +13,7 @@ namespace Render3D.Models
 
         public Vector3[] Normals;
 
-        public int[] Colors;
+        public Vector3[] Colors;
 
         public Triangle() { }
 
@@ -21,7 +21,7 @@ namespace Render3D.Models
         {
             Points = (Vector4[])triangle.Points.Clone();
             Normals = (Vector3[])triangle.Normals.Clone();
-            Colors = (int[])triangle.Colors.Clone();
+            Colors = (Vector3[])triangle.Colors.Clone();
         }
     }
 }
