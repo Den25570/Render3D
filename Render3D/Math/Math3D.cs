@@ -345,7 +345,6 @@ namespace Render3D.Math
             var bX = ((v2.Y - v3.Y) * (v.X - v3.X) + (v3.X - v2.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
             var bY = ((v3.Y - v1.Y) * (v.X - v3.X) + (v1.X - v3.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
             var bZ = 1 - bX - bY;
-
             return i1 * bX + i2 * bY + i3 * bZ;
         }
 
@@ -356,7 +355,7 @@ namespace Render3D.Math
             var bZ = 1 - bX - bY;
             return Vector3.Normalize(n1 * bX + n2 * bY + n3 * bZ);
         }
-        public static float InterpolateZ(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, int x, int y)
+        public static float InterpolateZ(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, float x, float y)
         {
             var bX = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
             var bY = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
@@ -364,7 +363,7 @@ namespace Render3D.Math
             return z1 * bX + z2 * bY + z3 * bZ;
         }
 
-        public static float InterpolateZ(Vector3 v1, Vector3 v2, Vector3 v3, int x, int y)
+        public static float InterpolateZ(Vector3 v1, Vector3 v2, Vector3 v3, float x, float y)
         {
             var bX = ((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
             var bY = ((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
@@ -372,7 +371,7 @@ namespace Render3D.Math
             return v1.Z * bX + v2.Z * bY + v3.Z * bZ;
         }
 
-        public static float InterpolateZ(Vector4 v1, Vector4 v2, Vector4 v3, int x, int y)
+        public static float InterpolateZ(Vector4 v1, Vector4 v2, Vector4 v3, float x, float y)
         {
             var W1 = ((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
             var W2 = ((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));

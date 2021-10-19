@@ -64,9 +64,12 @@ namespace Render3D.Render
 
         private void DrawTriangle(Triangle triangle, World world)
         {
-            var v1 = triangle.Points[0]; v1.X = (int)MathF.Ceiling(v1.X); v1.Y = (int)MathF.Ceiling(v1.Y);
-            var v2 = triangle.Points[1]; v2.X = (int)MathF.Ceiling(v2.X); v2.Y = (int)MathF.Ceiling(v2.Y);
-            var v3 = triangle.Points[2]; v3.X = (int)MathF.Ceiling(v3.X); v3.Y = (int)MathF.Ceiling(v3.Y);
+            triangle.Points[0].X = (int)triangle.Points[0].X; triangle.Points[0].Y = (int)triangle.Points[0].Y;
+            triangle.Points[1].X = (int)triangle.Points[1].X; triangle.Points[1].Y = (int)triangle.Points[1].Y;
+            triangle.Points[2].X = (int)triangle.Points[2].X; triangle.Points[2].Y = (int)triangle.Points[2].Y;
+            var v1 = triangle.Points[0];
+            var v2 = triangle.Points[1]; 
+            var v3 = triangle.Points[2]; 
             if (v2.Y < v1.Y)
             {
                 Vector4 tmp = v1;
@@ -109,22 +112,24 @@ namespace Render3D.Render
                 Utility.Swap(ref dx13, ref dx12);
             }
             // растеризуем верхний полутреугольник
-            for (int y = (int)MathF.Ceiling(v1.Y); y < (int)MathF.Ceiling(v2.Y); y++)
+            for (int y = (int)v1.Y; y < (int)v2.Y; y++)
             {
                 // рисуем горизонтальную линию между рабочими
                 // точками
-                for (int x = (int)MathF.Ceiling(wx1); x <= (int)MathF.Ceiling(wx2); x++)
+                float x = wx1;
+                for (int xi = (int)MathF.Round(wx1); xi <= (int)MathF.Round(wx2); xi++)
                 {
-                    if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
+                    if (xi >= 0 && y >= 0 && xi < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
                     {
                         var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
-                        if (z < _zBuffer[x * _height + y])
+                        if (z <= _zBuffer[xi * _height + y])
                         {
                             var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, y, 0, 1));
-                            DrawPixel(x, y, color);
-                            _zBuffer[x * _height + y] = z;
+                            DrawPixel(xi, y, color);
+                            _zBuffer[xi * _height + y] = z;
                         }
                     }
+                    x += 1;
                 }
                 wx1 += dx13;
                 wx2 += dx12;
@@ -145,22 +150,25 @@ namespace Render3D.Render
                 dx23 = tmp;
             }
             // растеризуем нижний полутреугольник
-            for (int y = (int)MathF.Ceiling(v2.Y); y <= (int)MathF.Ceiling(v3.Y); y++)
+            for (int y = (int)v2.Y; y <= (int)v3.Y; y++)
             {
                 // рисуем горизонтальную линию между рабочими
                 // точками
-                for (int x = (int)MathF.Ceiling(wx1); x <= (int)MathF.Ceiling(wx2); x++)
+                float x = wx1;
+                for (int xi = (int)MathF.Round(wx1); xi <= (int)MathF.Round(wx2); xi++)
                 {
                     if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
                     {
                         var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
-                        if (z < _zBuffer[x * _height + y])
+                        if (z < _zBuffer[xi * _height + y])
                         {
                             var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, y, 0, 1));
-                            DrawPixel(x, y, color);
-                            _zBuffer[x * _height + y] = z;
+
+                            DrawPixel(xi, y, color);
+                            _zBuffer[xi * _height + y] = z;
                         }
                     }
+                    x += 1;
                 }
                 wx1 += _dx13;
                 wx2 += dx23;
