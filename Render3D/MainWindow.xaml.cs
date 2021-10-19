@@ -98,14 +98,19 @@ namespace Render3D
             transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
 
             // World -> View
-            transformedModel.TransformModel(viewMatrix, true);
+            
             if (dataContext.RenderMode == RenderMode.Phong)
             {
+                transformedModel.TransformModel(viewMatrix, true);
                 for (int i = 0; i < world.Lights.Length; i++)
                 {
                     world.Lights[i] = Vector3.Transform(world.Lights[i], viewMatrix);
                 }
                 transformedModel.CalculateColor(world);
+            }
+            else
+            {
+                transformedModel.TransformModel(viewMatrix, false);
             }
 
             // View -> Clip
