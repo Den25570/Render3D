@@ -29,9 +29,10 @@ namespace Render3D.Parser
             {
                 for (string stringLine; (stringLine = reader.ReadLine()) != null;)
                 {
-                    string[] items = stringLine.Split(' ');
+                    List<string> items = stringLine.Replace('.', ',').Split(' ').ToList();
+                    items.RemoveAll(s => s == "");
 
-                    if (items.Length > 0)
+                    if (items.Count > 0)
                     {
                         switch (items[0])
                         {
@@ -41,15 +42,15 @@ namespace Render3D.Parser
                                     X = float.Parse(items[1]),
                                     Y = float.Parse(items[2]),
                                     Z = float.Parse(items[3]),
-                                    W = items.Length >= 5 ? float.Parse(items[4]) : 1.0F,
+                                    W = items.Count >= 5 ? float.Parse(items[4]) : 1.0F,
                                 });
                                 break;
                             case "vt":
                                 model.TextureVertices.Add(new Vector3()
                                 {
                                     X = float.Parse(items[1]),
-                                    Y = items.Length >= 3 ? float.Parse(items[2]) : 0.0F,
-                                    Z = items.Length >= 4 ? float.Parse(items[3]) : 0.0F,
+                                    Y = items.Count >= 3 ? float.Parse(items[2]) : 0.0F,
+                                    Z = items.Count >= 4 ? float.Parse(items[3]) : 0.0F,
                                 });
                                 break;
                             case "vn":
@@ -64,27 +65,31 @@ namespace Render3D.Parser
                                 model.SpaceVertices.Add(new Vector3()
                                 {
                                     X = float.Parse(items[1]),
-                                    Y = items.Length >= 3 ? float.Parse(items[2]) : 0.0F,
-                                    Z = items.Length >= 4 ? float.Parse(items[3]) : 0.0F,
+                                    Y = items.Count >= 3 ? float.Parse(items[2]) : 0.0F,
+                                    Z = items.Count >= 4 ? float.Parse(items[3]) : 0.0F,
                                 });
                                 break;
                             case "f":
                                 var face = new List<FaceVertex>();
-                                for (int i = 1; i < items.Length; i++)
+                                for (int i = 1; i < items.Count; i++)
                                 {
-                                    var vertexIndices = items[i].Split('/');
-                                    face.Add(new FaceVertex()
+                                    if (items[i] != "")
                                     {
-                                       v = int.Parse(vertexIndices[0]),
-                                       vt = vertexIndices.Length > 1 && vertexIndices[1] != "" ? int.Parse(vertexIndices[1]) : 0,
-                                       vn = vertexIndices.Length > 2 ? int.Parse(vertexIndices[2]) : 0,
-                                    });
+                                        var vertexIndices = items[i].Split('/');
+
+                                        face.Add(new FaceVertex()
+                                        {
+                                            v = int.Parse(vertexIndices[0]),
+                                            vt = vertexIndices.Length > 1 && vertexIndices[1] != "" ? int.Parse(vertexIndices[1]) : 0,
+                                            vn = vertexIndices.Length > 2 ? int.Parse(vertexIndices[2]) : 0,
+                                        });
+                                    }
                                 }
                                 model.Faces.Add(face);
                                 break;
                             case "l":
                                 var line = new List<int>();
-                                for (int i = 1; i < items.Length; i++)
+                                for (int i = 1; i < items.Count; i++)
                                 {
                                     line.Add(int.Parse(items[i]));
                                 }

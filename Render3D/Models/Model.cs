@@ -52,7 +52,7 @@ namespace Render3D.Models
                         Vector3 Idiff = Triangles[i].Colors[j] * MathF.Max(Vector3.Dot(Triangles[i].Normals[j], l), 0.0f);
                         Idiff = Vector3.Clamp(Idiff, Vector3.Zero, Vector3.One);
 
-                        Vector3 Ispec = Triangles[i].Colors[j] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), 15);
+                        Vector3 Ispec = Triangles[i].Colors[j] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), 90);
                         Ispec = Vector3.Clamp(Ispec, Vector3.Zero, Vector3.One);
 
                         result += Iamb + Idiff + Ispec;
@@ -65,9 +65,9 @@ namespace Render3D.Models
         private void FacesToTriangles(ObjectModel loadedModel)
         {
             List<Triangle> triangles = new List<Triangle>();
-            for (int i = 1; i < loadedModel.Faces.Count(); i++)
+            for (int i = 0; i < loadedModel.Faces.Count(); i++)
             {
-                for(int j = 1; j < loadedModel.Faces[i].Count() - 1; j++)
+                for(int j = 0; j < loadedModel.Faces[i].Count() - 1; j++)
                 {
                     var v1 = loadedModel.Vertices[loadedModel.Faces[i][0].v - 1];
                     var v2 = loadedModel.Vertices[loadedModel.Faces[i][j].v - 1];

@@ -18,7 +18,7 @@ namespace Render3D.Models
 
         public Camera()
         {
-            FOV = MathF.PI / 2;
+            FOV = MathF.PI / 3;
             ZNear = 0.1f;
             ZFar = 200f;
             Position = Vector3.UnitZ;

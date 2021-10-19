@@ -57,18 +57,18 @@ namespace Render3D
                 {RenderMode.Wireframe, new WireframeRenderer() },
             };
             _renderer = _renderers[dataContext.RenderMode];
-            world = new World()
-            {
-                Lights = new Vector3[] { dataContext.lightDirection },
-                Camera = dataContext.Camera,
-                BackgroundLight = 0.1f,
-            };
 
             InitializeComponent();
         }
 
         private void RenderModel()
         {
+            world = new World()
+            {
+                Lights = new Vector3[] { dataContext.lightPosition },
+                Camera = dataContext.Camera,
+                BackgroundLight = 0.1f,
+            };
             var transformedModel = new Model(model);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -98,8 +98,15 @@ namespace Render3D
             transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
 
             // World -> View
-            transformedModel.TransformModel(viewMatrix);
-            transformedModel.CalculateColor(world);
+            transformedModel.TransformModel(viewMatrix, true);
+            if (dataContext.RenderMode == RenderMode.Phong)
+            {
+                for (int i = 0; i < world.Lights.Length; i++)
+                {
+                    world.Lights[i] = Vector3.Transform(world.Lights[i], viewMatrix);
+                }
+                transformedModel.CalculateColor(world);
+            }
 
             // View -> Clip
             transformedModel.ClipTriangles(
