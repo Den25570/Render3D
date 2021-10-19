@@ -64,12 +64,12 @@ namespace Render3D
             YScale = 100;
             ZScale = 100;
 
-            LightPosition = -Vector3.UnitZ * 20;
+            LightPosition = Vector3.UnitY * 20;
             RenderMode = RenderMode.Phong;
 
             camera = new Camera()
             {
-                Position = new Vector3(0, 1, 0),
+                Position = new Vector3(0, 5, -2),
                 Rotation = Vector3.Zero,
             }; 
         }

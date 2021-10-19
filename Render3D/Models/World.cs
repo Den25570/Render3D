@@ -10,6 +10,7 @@ namespace Render3D.Models
     public class World
     {
         public Vector3[] Lights { get; set; }
+        public Vector3[] LightsColors { get; set; }
 
         public float BackgroundLight { get; set; }
 

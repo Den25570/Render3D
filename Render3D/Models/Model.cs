@@ -49,10 +49,11 @@ namespace Render3D.Models
                         var r = Vector3.Normalize(-Vector3.Reflect(l, Triangles[i].Normals[j]));
 
                         Vector3 Iamb = Triangles[i].Colors[j] * world.BackgroundLight;
+
                         Vector3 Idiff = Triangles[i].Colors[j] * MathF.Max(Vector3.Dot(Triangles[i].Normals[j], l), 0.0f);
                         Idiff = Vector3.Clamp(Idiff, Vector3.Zero, Vector3.One);
 
-                        Vector3 Ispec = Triangles[i].Colors[j] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), 90);
+                        Vector3 Ispec = world.LightsColors[li] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), 5);
                         Ispec = Vector3.Clamp(Ispec, Vector3.Zero, Vector3.One);
 
                         result += Iamb + Idiff + Ispec;
@@ -79,7 +80,7 @@ namespace Render3D.Models
                     {
                         Points = new Vector4[] { v1, v2, v3 },
                         Normals = new Vector3[] { n1, n2, n3 },
-                        Colors = new Vector3[3] { Vector3.One, Vector3.One, Vector3.One }
+                        Colors = new Vector3[3] { Vector3.UnitZ, Vector3.UnitZ, Vector3.UnitZ }
                     });
                 }
             }
@@ -110,9 +111,9 @@ namespace Render3D.Models
             var visibleTriangles = new List<Triangle>();
             for (int i = 0; i < Triangles.Length; i++)
             {
-                var n = (Triangles[i].Normals[0] + Triangles[i].Normals[1] + Triangles[i].Normals[2]) / 3;
-                var v = Triangles[i].Points[0];
-                if (Vector3.Dot(n, v.ToVector3() - cameraPosition) < 0)
+                if (Vector3.Dot(Triangles[i].Normals[0], Triangles[i].Points[0].ToVector3() - cameraPosition) < 0 || 
+                    Vector3.Dot(Triangles[i].Normals[1], Triangles[i].Points[1].ToVector3() - cameraPosition) < 0 || 
+                    Vector3.Dot(Triangles[i].Normals[2], Triangles[i].Points[2].ToVector3() - cameraPosition) < 0)
                 {
                     visibleTriangles.Add(new Triangle(Triangles[i])) ;
                 }

@@ -66,6 +66,7 @@ namespace Render3D
             world = new World()
             {
                 Lights = new Vector3[] { dataContext.lightPosition },
+                LightsColors = new Vector3[] { Vector3.One },
                 Camera = dataContext.Camera,
                 BackgroundLight = 0.1f,
             };
@@ -90,28 +91,24 @@ namespace Render3D
             var projectionMatrix = Math3D.GetPerspectiveProjectionMatrix(dataContext.Camera.FOV, dataContext.Camera.ZNear, dataContext.Camera.ZFar, width / height);
             var viewportMatrix = Math3D.GetViewportMatrix(width, height, 0, 0);
 
-            // Model -> World
-            
+            // Model -> World    
             transformedModel.TransformModel(modelMatrix, true);
 
             // Remove hidden faces
             transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
-
             // World -> View
-            
+            transformedModel.TransformModel(viewMatrix, true);
+            for (int i = 0; i < world.Lights.Length; i++)
+            {
+                world.Lights[i] = Vector3.Transform(world.Lights[i], viewMatrix);
+            }
             if (dataContext.RenderMode == RenderMode.Phong)
             {
-                transformedModel.TransformModel(viewMatrix, true);
-                for (int i = 0; i < world.Lights.Length; i++)
-                {
-                    world.Lights[i] = Vector3.Transform(world.Lights[i], viewMatrix);
-                }
                 transformedModel.CalculateColor(world);
             }
-            else
-            {
-                transformedModel.TransformModel(viewMatrix, false);
-            }
+
+            
+
 
             // View -> Clip
             transformedModel.ClipTriangles(

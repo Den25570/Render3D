@@ -16,6 +16,7 @@ namespace Render3D.Extensions
 
         public static int ToRGB(this Vector3 v)
         {
+            v = Vector3.Clamp(v, Vector3.Zero, Vector3.One);
             int color = ((int)(v.X*0xFF) * 0x100 * 0x100) + ((int)(v.Y * 0xFF) * 0x100) + (int)(v.Z * 0xFF);
             color = color > 0xFFFFFF ? 0xFFFFFF : color;
             color = color < 0 ? 0 : color;
