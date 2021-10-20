@@ -3,13 +3,7 @@ using Render3D.Math;
 using Render3D.Models;
 using Render3D.Utils;
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,12 +12,15 @@ using System.Windows.Media.Imaging;
 
 namespace Render3D.Render
 {
-    public class PhongRenderer : IRenderer
+    unsafe public class PhongRenderer : IRenderer
     {
         private WriteableBitmap _bitmap;
         float[] _zBuffer;
         private int _width;
         private int _height;
+
+        private IntPtr _pBackBuffer;
+        private int _backBufferStride;
 
         public bool HasBitmap { get => _bitmap != null; }
 
@@ -32,7 +29,10 @@ namespace Render3D.Render
             _width = width;
             _height = height;
             _zBuffer = new float[height * width];
+
             _bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
+            _backBufferStride = _bitmap.BackBufferStride;
+            _pBackBuffer = _bitmap.BackBuffer;
 
             var image = new System.Windows.Controls.Image();
             image.Source = _bitmap;
@@ -48,11 +48,11 @@ namespace Render3D.Render
                 Array.Fill(_zBuffer, float.MaxValue);
                 _bitmap.Clear(System.Windows.Media.Color.FromRgb(0, 0, 0));
 
-                for(int i = 0; i < model.Triangles.Length; i++)
+                Parallel.For(0, model.Triangles.Length, (i) =>
                 {
                     //Draw triangle
                     DrawTriangle(model.Triangles[i], world);
-                }
+                });
                 _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             }
             finally
@@ -119,10 +119,10 @@ namespace Render3D.Render
                 float x = wx1;
                 for (int xi = (int)MathF.Round(wx1); xi <= (int)MathF.Round(wx2); xi++)
                 {
-                    if (xi >= 0 && y >= 0 && xi < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
+                    if (xi >= 0 && y >= 0 && xi < _width && y < _height)
                     {
                         var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
-                        if (z <= _zBuffer[xi * _height + y])
+                        if (z < _zBuffer[xi * _height + y])
                         {
                             var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, y, 0, 1));
                             DrawPixel(xi, y, color);
@@ -134,15 +134,11 @@ namespace Render3D.Render
                 wx1 += dx13;
                 wx2 += dx12;
             }
-            // вырожденный случай, когда верхнего полутреугольника нет
-            // надо разнести рабочие точки по оси x, т.к. изначально они совпадают
             if (v1.Y == v2.Y)
             {
                 wx1 = v1.X < v2.X ? v1.X : v2.X;
                 wx2 = v1.X >= v2.X ? v1.X : v2.X;
             }
-            // упорядочиваем приращения
-            // (используем сохраненное приращение)
             if (_dx13 < dx23)
             {
                 float tmp = _dx13;
@@ -157,7 +153,7 @@ namespace Render3D.Render
                 float x = wx1;
                 for (int xi = (int)MathF.Round(wx1); xi <= (int)MathF.Round(wx2); xi++)
                 {
-                    if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
+                    if (x >= 0 && y >= 0 && x < _width && y < _height)
                     {
                         var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
                         if (z < _zBuffer[xi * _height + y])
@@ -177,13 +173,8 @@ namespace Render3D.Render
 
         private void DrawPixel(int x, int y, Vector3 color)
         {
-            unsafe
-            {
-                IntPtr pBackBuffer = _bitmap.BackBuffer;
-                pBackBuffer += y * _bitmap.BackBufferStride;
-                pBackBuffer += x * 4;
-                *((int*)pBackBuffer) = color.ToRGB();
-            }
+            Int32 offest = y * _backBufferStride + x * 4;
+            *((int*)(_pBackBuffer + offest)) = color.ToRGB();
         }
     }
 }
