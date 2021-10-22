@@ -83,6 +83,7 @@ namespace Render3D
             if (!_renderer.HasBitmap)
                 _renderer.CreateBitmap(main_canvas, (int)width, (int)height);
 
+            
             var modelMatrix = Math3D.GetTransformationMatrix(
                 new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F),
                 new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation),
@@ -92,9 +93,11 @@ namespace Render3D
             var viewportMatrix = Math3D.GetViewportMatrix(width, height, 0, 0);
 
             // Model -> World    
+
             transformedModel.TransformModel(modelMatrix, true);
 
             // Remove hidden faces
+            Stopwatch stopwatch1 = Stopwatch.StartNew();
             transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
             // World -> View
             transformedModel.TransformModel(viewMatrix, true);
@@ -106,10 +109,10 @@ namespace Render3D
             {
                 transformedModel.CalculateColor(world);
             }
+            stopwatch1.Stop();
+            var a = stopwatch1.ElapsedMilliseconds;
 
-            
-
-
+            Stopwatch stopwatch2 = Stopwatch.StartNew();
             // View -> Clip
             transformedModel.ClipTriangles(
                 new Vector3(0, 0, dataContext.Camera.ZNear),
@@ -131,10 +134,16 @@ namespace Render3D
                 new Vector3(width - 1, 0, 0),
                 -Vector3.UnitX);
             //Render
+            stopwatch2.Stop();
+            var b  = stopwatch2.ElapsedMilliseconds;
+
+            Stopwatch stopwatch3= Stopwatch.StartNew();
             _renderer.RenderModel(transformedModel, world);;
+            stopwatch3.Stop();
+            var c = stopwatch2.ElapsedMilliseconds;
 
             stopwatch.Stop();
-            dataContext.FPS = 1f / ((stopwatch.ElapsedMilliseconds > 0 ? stopwatch.ElapsedMilliseconds : 0.01f) / 1000f);
+            dataContext.FPS = stopwatch.ElapsedMilliseconds ;
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)

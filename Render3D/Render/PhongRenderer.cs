@@ -4,6 +4,7 @@ using Render3D.Models;
 using Render3D.Utils;
 using System;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,6 +17,7 @@ namespace Render3D.Render
     {
         private WriteableBitmap _bitmap;
         float[] _zBuffer;
+        SpinLock[] _zBufferSpinlock;
         private int _width;
         private int _height;
 
@@ -29,6 +31,7 @@ namespace Render3D.Render
             _width = width;
             _height = height;
             _zBuffer = new float[height * width];
+            _zBufferSpinlock = new SpinLock[height * width];
 
             _bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
             _backBufferStride = _bitmap.BackBufferStride;
@@ -109,24 +112,39 @@ namespace Render3D.Render
             float _dx13 = dx13;
             if (dx13 > dx12)
             {
-                Utility.Swap(ref dx13, ref dx12);
+                float tmp = dx13;
+                dx13 = dx12;
+                dx12 = tmp;
             }
             // растеризуем верхний полутреугольник
-            for (int y = (int)v1.Y; y < (int)v2.Y; y++)
+            for (int yi = (int)v1.Y; yi < (int)v2.Y; yi++)
             {
                 // рисуем горизонтальную линию между рабочими
                 // точками
                 float x = wx1;
                 for (int xi = (int)MathF.Round(wx1); xi <= (int)MathF.Round(wx2); xi++)
                 {
-                    if (xi >= 0 && y >= 0 && xi < _width && y < _height)
+                    if (xi >= 0 && yi >= 0 && xi < _width && yi < _height)
                     {
-                        var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
-                        if (z < _zBuffer[xi * _height + y])
+                        var z = Math3D.InterpolateZ(v1, v2, v3, x, yi);
+                        int zIndex = xi * _height + yi;
+                        if (z < _zBuffer[zIndex])
                         {
-                            var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, y, 0, 1));
-                            DrawPixel(xi, y, color);
-                            _zBuffer[xi * _height + y] = z;
+                            // Draw Pixel
+                            var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, yi, 0, 1));
+                            DrawPixel(xi, yi, color);
+                            _zBuffer[zIndex] = z;
+                            // Update z buffer
+                            bool gotLock = false;
+                            try
+                            {
+                                _zBufferSpinlock[zIndex].Enter(ref gotLock);
+                                _zBuffer[zIndex] = z;
+                            }
+                            finally
+                            {
+                                if (gotLock) _zBufferSpinlock[zIndex].Exit();
+                            }
                         }
                     }
                     x += 1;
@@ -146,22 +164,34 @@ namespace Render3D.Render
                 dx23 = tmp;
             }
             // растеризуем нижний полутреугольник
-            for (int y = (int)v2.Y; y <= (int)v3.Y; y++)
+            for (int yi = (int)v2.Y; yi <= (int)v3.Y; yi++)
             {
                 // рисуем горизонтальную линию между рабочими
                 // точками
                 float x = wx1;
                 for (int xi = (int)MathF.Round(wx1); xi <= (int)MathF.Round(wx2); xi++)
                 {
-                    if (x >= 0 && y >= 0 && x < _width && y < _height)
+                    if (x >= 0 && yi >= 0 && xi < _width && yi < _height)
                     {
-                        var z = Math3D.InterpolateZ(v1, v2, v3, x, y);
-                        if (z < _zBuffer[xi * _height + y])
+                        var z = Math3D.InterpolateZ(v1, v2, v3, x, yi);
+                        int zIndex = xi * _height + yi;
+                        if (z < _zBuffer[zIndex])
                         {
-                            var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, y, 0, 1));
-
-                            DrawPixel(xi, y, color);
-                            _zBuffer[xi * _height + y] = z;
+                            // Draw Pixel
+                            var color = Math3D.InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], new Vector4(x, yi, 0, 1));
+                            DrawPixel(xi, yi, color);
+                            _zBuffer[zIndex] = z;
+                            // Update z buffer
+                            bool gotLock = false;
+                            try
+                            {
+                                _zBufferSpinlock[zIndex].Enter(ref gotLock);
+                                _zBuffer[zIndex] = z;
+                            }
+                            finally
+                            {
+                                if (gotLock) _zBufferSpinlock[zIndex].Exit();
+                            }
                         }
                     }
                     x += 1;
