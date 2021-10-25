@@ -7,15 +7,14 @@ using System.Threading.Tasks;
 
 namespace Render3D.Models
 {
-    public class World
+    public class Scene
     {
         public Vector3[] Lights { get; set; }
         public Vector3[] LightsColors { get; set; }
 
-        public float BackgroundLight { get; set; }
+        public float BackgroundLightIntensity { get; set; }
+        public float MirrorLightIntensity { get; set; }
 
-        public float MirrorLight { get; set; }
-
-        public Camera Camera { get; set; }
+        public Camera MainCamera { get; set; }
     }
 }

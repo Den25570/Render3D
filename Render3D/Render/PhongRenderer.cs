@@ -1,7 +1,6 @@
 ﻿using Render3D.Extensions;
 using Render3D.Math;
 using Render3D.Models;
-using Render3D.Utils;
 using System;
 using System.Numerics;
 using System.Threading;
@@ -43,7 +42,7 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, World world)
+        public void RenderModel(Model model, Scene world)
         {
             try
             {
@@ -65,7 +64,7 @@ namespace Render3D.Render
 
         }
 
-        private void DrawTriangle(Triangle triangle, World world)
+        private void DrawTriangle(Triangle triangle, Scene world)
         {
             triangle.Points[0].X = (int)triangle.Points[0].X; triangle.Points[0].Y = (int)triangle.Points[0].Y;
             triangle.Points[1].X = (int)triangle.Points[1].X; triangle.Points[1].Y = (int)triangle.Points[1].Y;

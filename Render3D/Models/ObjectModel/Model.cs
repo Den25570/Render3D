@@ -35,7 +35,7 @@ namespace Render3D.Models
 
         // TODO Add lights color
         // TODO Add material/texture
-        public void CalculateColor(World world)
+        public void CalculateColor(Scene world)
         {
             Parallel.For(0, Triangles.Length, (i) =>
             {
@@ -48,7 +48,7 @@ namespace Render3D.Models
                         var e = Vector3.Normalize(-Triangles[i].Points[j].ToVector3());
                         var r = Vector3.Normalize(-Vector3.Reflect(l, Triangles[i].Normals[j]));
 
-                        Vector3 Iamb = Triangles[i].Colors[j] * world.BackgroundLight;
+                        Vector3 Iamb = Triangles[i].Colors[j] * world.BackgroundLightIntensity;
 
                         Vector3 Idiff = Triangles[i].Colors[j] * MathF.Max(Vector3.Dot(Triangles[i].Normals[j], l), 0.0f);
                         Idiff = Vector3.Clamp(Idiff, Vector3.Zero, Vector3.One);

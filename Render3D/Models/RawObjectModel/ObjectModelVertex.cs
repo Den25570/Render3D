@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Render3D.Models
 {
-    public struct FaceVertex
+    public struct ObjectModelVertex
     {
         public int v;
         public int vt;

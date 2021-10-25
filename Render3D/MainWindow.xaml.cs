@@ -35,7 +35,7 @@ namespace Render3D
 
         // Data
         private Model model;
-        private World world;
+        private Scene world;
         private ApplicationViewModel dataContext;
 
         // Control params
@@ -63,12 +63,12 @@ namespace Render3D
 
         private void RenderModel()
         {
-            world = new World()
+            world = new Scene()
             {
                 Lights = new Vector3[] { dataContext.lightPosition },
                 LightsColors = new Vector3[] { Vector3.One },
-                Camera = dataContext.Camera,
-                BackgroundLight = 0.1f,
+                MainCamera = dataContext.Camera,
+                BackgroundLightIntensity = 0.1f,
             };
             var transformedModel = new Model(model);
 

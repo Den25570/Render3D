@@ -20,7 +20,7 @@ namespace Render3D.Parser
                 VertexNormals = new List<Vector3>(),
                 TextureVertices = new List<Vector3>(),
                 SpaceVertices = new List<Vector3>(),
-                Faces = new List<List<FaceVertex>>(),
+                Faces = new List<List<ObjectModelVertex>>(),
                 Lines = new List<List<int>>(),
             };
 
@@ -70,14 +70,14 @@ namespace Render3D.Parser
                                 });
                                 break;
                             case "f":
-                                var face = new List<FaceVertex>();
+                                var face = new List<ObjectModelVertex>();
                                 for (int i = 1; i < items.Count; i++)
                                 {
                                     if (items[i] != "")
                                     {
                                         var vertexIndices = items[i].Split('/');
 
-                                        face.Add(new FaceVertex()
+                                        face.Add(new ObjectModelVertex()
                                         {
                                             v = int.Parse(vertexIndices[0]),
                                             vt = vertexIndices.Length > 1 && vertexIndices[1] != "" ? int.Parse(vertexIndices[1]) : 0,

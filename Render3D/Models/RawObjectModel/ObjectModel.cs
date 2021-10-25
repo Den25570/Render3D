@@ -16,7 +16,7 @@ namespace Render3D.Models
         public List<Vector3> TextureVertices;
         public List<Vector3> SpaceVertices;
 
-        public List<List<FaceVertex>> Faces;
+        public List<List<ObjectModelVertex>> Faces;
         public List<List<int>> Lines;
 
         public void CalculateNormals()
@@ -32,10 +32,10 @@ namespace Render3D.Models
                     var normal = Vector3.Normalize(Vector3.Cross(l1.ToVector3(), l2.ToVector3()));
                     normals.Add(normal);
 
-                    var newFace = new List<FaceVertex>();
+                    var newFace = new List<ObjectModelVertex>();
                     foreach (var vertex in Faces[i])
                     {
-                        newFace.Add(new FaceVertex()
+                        newFace.Add(new ObjectModelVertex()
                         {
                             v = vertex.v,
                             vn = normals.Count(),

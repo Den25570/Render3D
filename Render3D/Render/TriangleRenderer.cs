@@ -1,7 +1,6 @@
 ﻿using Render3D.Extensions;
 using Render3D.Math;
 using Render3D.Models;
-using Render3D.Utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -40,7 +39,7 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, World world)
+        public void RenderModel(Model model, Scene world)
         {
             try
             {
@@ -115,7 +114,9 @@ namespace Render3D.Render
             float _dx13 = dx13;
             if (dx13 > dx12)
             {
-                Utility.Swap(ref dx13, ref dx12);
+                float tmp = dx13;
+                dx13 = dx12;
+                dx12 = tmp;
             }
             // растеризуем верхний полутреугольник
             for (int y = (int)MathF.Ceiling(v1.Y); y < (int)MathF.Ceiling(v2.Y); y++)
