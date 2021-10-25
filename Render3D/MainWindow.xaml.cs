@@ -53,7 +53,7 @@ namespace Render3D
             _renderers = new Dictionary<RenderMode, IRenderer>()
             {
                 {RenderMode.Phong, new PhongRenderer() },
-                {RenderMode.SimpleTriangle, new TriangleRenderer() },
+                {RenderMode.SimpleTriangle, new FlatRenderer() },
                 {RenderMode.Wireframe, new WireframeRenderer() },
             };
             _renderer = _renderers[dataContext.RenderMode];

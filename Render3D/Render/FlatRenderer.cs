@@ -17,7 +17,7 @@ using System.Windows.Media.Imaging;
 
 namespace Render3D.Render
 {
-    public class TriangleRenderer : IRenderer
+    public class FlatRenderer : IRenderer
     {
         private WriteableBitmap _bitmap;
         float[] _zBuffer;
