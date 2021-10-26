@@ -1,5 +1,6 @@
 ﻿using Render3D.Extensions;
 using Render3D.Math;
+using Render3D.Models.Texture;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,13 +13,15 @@ namespace Render3D.Models
 {
     public class Model
     {
-        public Triangle[] Triangles;
+        public Triangle[] Triangles { get; private set; }
+        public Material Material { get; private set; }
 
         public Model() {}
 
-        public Model(ObjectModel loadedModel)
+        public Model(ObjectModel loadedModel, Material material)
         {
             FacesToTriangles(loadedModel);
+            Material = material;
         }
 
         public Model(Model model)

@@ -155,7 +155,7 @@ namespace Render3D
             {
                 // Load model
                 var fileName = openFileDlg.FileName;
-                var loadedModel = _parser.Parse(fileName);
+                var loadedModel = (ObjectModel)_parser.Parse(fileName);
 
                 // Preprocess model
                 loadedModel.CalculateNormals();

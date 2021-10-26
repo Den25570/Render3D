@@ -11,7 +11,7 @@ namespace Render3D.Parser
 {
     public class OBJParser : IParser
     {
-        public ObjectModel Parse(string path)
+        public Object Parse(string path)
         {
             ObjectModel model = new ObjectModel()
             {

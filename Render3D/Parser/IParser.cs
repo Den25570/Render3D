@@ -9,6 +9,6 @@ namespace Render3D.Parser
 {
     public interface IParser
     {
-        public ObjectModel Parse(string path);
+        public Object Parse(string path);
     }
 }
