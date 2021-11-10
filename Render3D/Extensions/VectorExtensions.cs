@@ -22,5 +22,10 @@ namespace Render3D.Extensions
             color = color < 0 ? 0 : color;
             return color;
         }
+
+        public static bool CompareXY(this Vector4 v1, Vector4 v2)
+        {
+            return v1.X == v2.X && v1.Y == v2.Y;
+        }
     }
 }

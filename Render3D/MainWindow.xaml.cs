@@ -6,20 +6,11 @@ using Render3D.Render;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Render3D
 {
@@ -30,12 +21,13 @@ namespace Render3D
     {
         // Services
         private IParser _parser;
+        private IParser _materialParser;
         private Dictionary<RenderMode, IRenderer> _renderers;
         private IRenderer _renderer;
 
         // Data
         private Model model;
-        private Scene world;
+        private Scene scene;
         private ApplicationViewModel dataContext;
 
         // Control params
@@ -46,12 +38,23 @@ namespace Render3D
 
         public MainWindow()
         {
-            _parser = new OBJParser();
+            _materialParser = new MaterialParser();
+            _parser = new OBJParser(_materialParser);
+
             DataContext = new ApplicationViewModel();
             dataContext = DataContext as ApplicationViewModel;
 
+            scene = new Scene()
+            {
+                Lights = new Vector3[] { dataContext.lightPosition },
+                LightsColors = new Vector3[] { Vector3.One },
+                MainCamera = dataContext.Camera,
+                BackgroundLightIntensity = 0.1f,
+            };
+
             _renderers = new Dictionary<RenderMode, IRenderer>()
             {
+                {RenderMode.Texture, new TextureRenderer() },
                 {RenderMode.Phong, new PhongRenderer() },
                 {RenderMode.SimpleTriangle, new FlatRenderer() },
                 {RenderMode.Wireframe, new WireframeRenderer() },
@@ -63,87 +66,40 @@ namespace Render3D
 
         private void RenderModel()
         {
-            world = new Scene()
-            {
-                Lights = new Vector3[] { dataContext.lightPosition },
-                LightsColors = new Vector3[] { Vector3.One },
-                MainCamera = dataContext.Camera,
-                BackgroundLightIntensity = 0.1f,
-            };
-            var transformedModel = new Model(model);
-
             Stopwatch stopwatch = Stopwatch.StartNew();
-            /*stopwatch.Stop();
-            var stopC = stopwatch.ElapsedMilliseconds;
-            stopwatch.Restart();*/
-
-            float width = (float)main_canvas.ActualWidth;
-            float height = (float)main_canvas.ActualHeight;
-
-            if (!_renderer.HasBitmap)
-                _renderer.CreateBitmap(main_canvas, (int)width, (int)height);
-
             
-            var modelMatrix = Math3D.GetTransformationMatrix(
-                new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F),
-                new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation),
-                new Vector3(dataContext.XTranslation, dataContext.YTranslation, dataContext.ZTranslation));
-            var viewMatrix = Math3D.GetViewMatrix(dataContext.Camera.Position, dataContext.Camera.Rotation);
-            var projectionMatrix = Math3D.GetPerspectiveProjectionMatrix(dataContext.Camera.FOV, dataContext.Camera.ZNear, dataContext.Camera.ZFar, width / height);
-            var viewportMatrix = Math3D.GetViewportMatrix(width, height, 0, 0);
-
-            // Model -> World    
-
-            transformedModel.TransformModel(modelMatrix, true);
-
-            // Remove hidden faces
-            Stopwatch stopwatch1 = Stopwatch.StartNew();
-            transformedModel.RemoveHiddenFaces(dataContext.Camera.Position);
-            // World -> View
-            transformedModel.TransformModel(viewMatrix, true);
-            for (int i = 0; i < world.Lights.Length; i++)
+            if (model != null)
             {
-                world.Lights[i] = Vector3.Transform(world.Lights[i], viewMatrix);
+                //
+                var transformedModel = new Model(model);
+                var transformedScene = new Scene(scene);
+                var modelMatrix = Math3D.GetTransformationMatrix(
+                    new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F),
+                    new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation),
+                    new Vector3(dataContext.XTranslation, dataContext.YTranslation, dataContext.ZTranslation));
+                var viewMatrix = Math3D.GetViewMatrix(dataContext.Camera.Position, dataContext.Camera.Rotation);
+                var projectionMatrix = Math3D.GetPerspectiveProjectionMatrix(dataContext.Camera.FOV, dataContext.Camera.ZNear, dataContext.Camera.ZFar, (float)main_canvas.ActualWidth / (float)main_canvas.ActualHeight);
+                var viewportMatrix = Math3D.GetViewportMatrix((float)main_canvas.ActualWidth, (float)main_canvas.ActualHeight, 0, 0);
+
+                // Transformations
+                transformedModel.TransformModel(modelMatrix, true); // Model -> World  
+                transformedModel.RemoveHiddenFaces(dataContext.Camera.Position); // Remove hidden faces
+                transformedModel.TransformModel(viewMatrix, true); // World -> View
+                transformedScene.TransformLights(viewMatrix); // Scene lights -> View
+                transformedModel.CalculateColor(scene); // Model colors
+                transformedModel.ClipTriangles(new Vector3(0, 0, dataContext.Camera.ZNear), new Vector3(0, 0, 1)); // view clip Z near
+                transformedModel.TransformModel(projectionMatrix); // 3D -> 2D projection
+                transformedModel.TransformModel(viewportMatrix); // 2D projection -> viewport projection
+                transformedModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitY); // viewport clip Y
+                transformedModel.ClipTriangles(new Vector3(0, (float)main_canvas.ActualHeight - 1, 0), -Vector3.UnitY); // viewport clip -Y
+                transformedModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitX); // viewport clip X
+                transformedModel.ClipTriangles(new Vector3((float)main_canvas.ActualWidth - 1, 0, 0), -Vector3.UnitX); // viewport clip -X
+
+                //Render
+                _renderer.RenderModel(transformedModel, null, scene); ;
             }
-            if (dataContext.RenderMode == RenderMode.Phong)
-            {
-                transformedModel.CalculateColor(world);
-            }
-            stopwatch1.Stop();
-            var a = stopwatch1.ElapsedMilliseconds;
-
-            Stopwatch stopwatch2 = Stopwatch.StartNew();
-            // View -> Clip
-            transformedModel.ClipTriangles(
-                new Vector3(0, 0, dataContext.Camera.ZNear),
-                new Vector3(0, 0, 1));
-            // 3D -> 2D
-            transformedModel.TransformModel(projectionMatrix);
-            transformedModel.TransformModel(viewportMatrix);
-            // 2D -> CLip
-            transformedModel.ClipTriangles(
-                 new Vector3(0, 0, 0),
-                 Vector3.UnitY);
-            transformedModel.ClipTriangles(
-                 new Vector3(0, height - 1, 0),
-                 -Vector3.UnitY);
-            transformedModel.ClipTriangles(
-                 new Vector3(0, 0, 0),
-                 Vector3.UnitX);
-            transformedModel.ClipTriangles(
-                new Vector3(width - 1, 0, 0),
-                -Vector3.UnitX);
-            //Render
-            stopwatch2.Stop();
-            var b  = stopwatch2.ElapsedMilliseconds;
-
-            Stopwatch stopwatch3= Stopwatch.StartNew();
-            _renderer.RenderModel(transformedModel, world);;
-            stopwatch3.Stop();
-            var c = stopwatch2.ElapsedMilliseconds;
-
             stopwatch.Stop();
-            dataContext.FPS = stopwatch.ElapsedMilliseconds ;
+            dataContext.FPS = stopwatch.ElapsedMilliseconds;
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
@@ -173,17 +129,13 @@ namespace Render3D
 
         private void TextBox_ModelTransformChanged(object sender, TextChangedEventArgs e)
         {
-            if (model != null)
-            {
-                RenderModel();
-            }
+            RenderModel();
         }
 
         private void main_canvas_KeyDown(object sender, KeyEventArgs e)
         {
             var rot = Quaternion.CreateFromYawPitchRoll(dataContext.Camera.Rotation.X, dataContext.Camera.Rotation.Y, dataContext.Camera.Rotation.Z);
             Vector3 forward = Vector3.Transform(Vector3.UnitZ, rot) * 0.1f;
-            Vector3 right = Vector3.Transform(Vector3.UnitZ, rot) * 0.1f;
 
             //Move
             if (e.Key == Key.W)
@@ -230,17 +182,23 @@ namespace Render3D
             // Utils
             if (e.Key == Key.F1)
             {
-                dataContext.RenderMode = RenderMode.Phong;
+                dataContext.RenderMode = RenderMode.Texture;
                 _renderer = _renderers[dataContext.RenderMode];
                 _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
             }
             if (e.Key == Key.F2)
             {
-                dataContext.RenderMode = RenderMode.SimpleTriangle;
+                dataContext.RenderMode = RenderMode.Phong;
                 _renderer = _renderers[dataContext.RenderMode];
                 _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
             }
             if (e.Key == Key.F3)
+            {
+                dataContext.RenderMode = RenderMode.SimpleTriangle;
+                _renderer = _renderers[dataContext.RenderMode];
+                _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
+            }
+            if (e.Key == Key.F4)
             {
                 dataContext.RenderMode = RenderMode.Wireframe;
                 _renderer = _renderers[dataContext.RenderMode];

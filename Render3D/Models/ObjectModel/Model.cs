@@ -14,20 +14,21 @@ namespace Render3D.Models
     public class Model
     {
         public Triangle[] Triangles { get; private set; }
-        public Material Material { get; private set; }
+        public List<Material> Materials { get; private set; }
 
         public Model() {}
 
-        public Model(ObjectModel loadedModel, Material material)
+        public Model(ObjectModel loadedModel)
         {
             FacesToTriangles(loadedModel);
-            Material = material;
+            Materials = loadedModel.Materials;
         }
 
         public Model(Model model)
         {
             if (model != null && model.Triangles != null)
             {
+                Materials = model.Materials;
                 Triangles = new Triangle[model.Triangles.Length];
                 for(int i = 0; i < Triangles.Length; i++)
                 {
@@ -73,18 +74,25 @@ namespace Render3D.Models
             {
                 for(int j = 0; j < loadedModel.Faces[i].Count() - 1; j++)
                 {
+
                     var v1 = loadedModel.Vertices[loadedModel.Faces[i][0].v - 1];
                     var v2 = loadedModel.Vertices[loadedModel.Faces[i][j].v - 1];
                     var v3 = loadedModel.Vertices[loadedModel.Faces[i][j + 1].v - 1];
+
                     var n1 = loadedModel.VertexNormals[loadedModel.Faces[i][0].vn - 1];
                     var n2 = loadedModel.VertexNormals[loadedModel.Faces[i][j].vn - 1];
                     var n3 = loadedModel.VertexNormals[loadedModel.Faces[i][j + 1].vn - 1];
+
+                    var vt1 = loadedModel.Faces[i][0].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][0].vt - 1] : new Vector2();
+                    var vt2 = loadedModel.Faces[i][0].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][j].vt - 1] : new Vector2();
+                    var vt3 = loadedModel.Faces[i][0].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][j + 1].vt - 1] : new Vector2();
                     triangles.Add(new Triangle()
                     {
+                        TextureCoordinates = new Vector2[] { vt1 , vt2, vt3 },
                         Points = new Vector4[] { v1, v2, v3 },
                         Normals = new Vector3[] { n1, n2, n3 },
                         Colors = new Vector3[3] { Vector3.UnitZ, Vector3.UnitZ, Vector3.UnitZ }
-                    });
+                    });;
                 }
             }
             Triangles = triangles.ToArray();
@@ -98,6 +106,7 @@ namespace Render3D.Models
                 {
                     Triangles[i].Points[j] = Vector4.Transform(Triangles[i].Points[j], transform);
                     Triangles[i].Points[j] /= Triangles[i].Points[j].W;
+                    Triangles[i].TextureCoordinates[j] /= Triangles[i].Points[j].W;
                 }
                 if (transformNormals)
                 {

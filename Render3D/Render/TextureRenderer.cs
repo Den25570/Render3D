@@ -16,7 +16,7 @@ using System.Windows.Media.Imaging;
 
 namespace Render3D.Render
 {
-    unsafe public class PhongRenderer : IRenderer
+    unsafe public class TextureRenderer : IRenderer
     {
         private WriteableBitmap _bitmap;
         private float[] _zBuffer;
@@ -76,23 +76,24 @@ namespace Render3D.Render
 
         private void DrawTriangle(Triangle triangle, IShader shader)
         {
-            var vectors = new List<Vector4>()
+            triangle.Points = new Vector4[]
             {
                 new Vector4((int)triangle.Points[0].X, (int)triangle.Points[0].Y, triangle.Points[0].Z, 0),
                 new Vector4((int)triangle.Points[1].X, (int)triangle.Points[1].Y, triangle.Points[1].Z, 0),
                 new Vector4((int)triangle.Points[2].X, (int)triangle.Points[2].Y, triangle.Points[2].Z, 0)
             };
+            var pi = new List<int>() { 0,1 ,2};
 
-            if (vectors.Select((_, i) => vectors[i].CompareXY(vectors[(i + 1) % vectors.Count])).All(b => b))
+            if (triangle.Points.Select((_, i) => triangle.Points[i].CompareXY(triangle.Points[(i + 1) % triangle.Points.Length])).All(b => b))
                 return;
 
             Action<int, int> drawPixel = delegate (int xi, int yi)
             {
-                var barycenter = Math3D.GetBarycenter(triangle.Points[0], triangle.Points[1], triangle.Points[2], xi, yi);
+                var barycenter = Math3D.GetBarycenter(triangle.Points[pi[0]], triangle.Points[pi[1]], triangle.Points[pi[2]], xi, yi);
                 barycenter = Vector3.Clamp(barycenter / (barycenter.X + barycenter.Y + barycenter.Z), Vector3.Zero, Vector3.One);
                 barycenter /= (barycenter.X + barycenter.Y + barycenter.Z);
 
-                var zValue = barycenter.X * triangle.Points[0].Z + barycenter.Y * triangle.Points[1].Z + barycenter.Z * triangle.Points[2].Z;
+                var zValue = barycenter.X * triangle.Points[pi[0]].Z + barycenter.Y * triangle.Points[pi[1]].Z + barycenter.Z * triangle.Points[pi[2]].Z;
                 var zIndex = xi * _height + yi;
                 var gotLock = false;
                 try
@@ -100,7 +101,7 @@ namespace Render3D.Render
                     _zBufferSpinlock[zIndex].Enter(ref gotLock);
                     if (zValue < _zBuffer[zIndex])
                     {
-                        _pixelBuffer[zIndex] = (barycenter.X * triangle.Colors[0] + barycenter.Y * triangle.Colors[1] + barycenter.Z * triangle.Colors[2]).ToRGB();
+                        _pixelBuffer[zIndex] = (barycenter.X * triangle.Colors[pi[0]] + barycenter.Y * triangle.Colors[pi[1]] + barycenter.Z * triangle.Colors[pi[2]]).ToRGB();
                         _zBuffer[zIndex] = zValue;
                     }
                 }
@@ -110,16 +111,16 @@ namespace Render3D.Render
                 }
             };
 
-            vectors.Sort((vx, vy) => vx.Y > vy.Y ? 1 : 0);
+            pi.Sort((vx, vy) => triangle.Points[vx].Y > triangle.Points[vy].Y ? 1 : 0);
             var deltaVectors = new List<float>()
             {
-                vectors[2].Y != vectors[0].Y ? (vectors[2].X - vectors[0].X) / (vectors[2].Y - vectors[0].Y) : 0, // dx13
-                vectors[1].Y != vectors[0].Y ? (vectors[1].X - vectors[0].X) / (vectors[1].Y - vectors[0].Y) : 0, // dx12
-                vectors[2].Y != vectors[1].Y ? (vectors[2].X - vectors[1].X) / (vectors[2].Y - vectors[1].Y) : 0, // dx23
+                triangle.Points[pi[2]].Y != triangle.Points[pi[0]].Y ? (triangle.Points[pi[2]].X - triangle.Points[pi[0]].X) / (triangle.Points[pi[2]].Y - triangle.Points[pi[0]].Y) : 0, // dx13
+                triangle.Points[pi[1]].Y != triangle.Points[pi[0]].Y ? (triangle.Points[pi[1]].X - triangle.Points[pi[0]].X) / (triangle.Points[pi[1]].Y - triangle.Points[pi[0]].Y) : 0, // dx12
+                triangle.Points[pi[2]].Y != triangle.Points[pi[1]].Y ? (triangle.Points[pi[2]].X - triangle.Points[pi[1]].X) / (triangle.Points[pi[2]].Y - triangle.Points[pi[1]].Y) : 0, // dx23
             };
 
- 
-            float wx1 = vectors[0].X;
+
+            float wx1 = triangle.Points[pi[0]].X;
             float wx2 = wx1;
             float _dx13 = deltaVectors[0];
 
@@ -130,7 +131,7 @@ namespace Render3D.Render
                 deltaVectors[1] = tmp;
             }
 
-            for (int yi = (int)vectors[0].Y; yi < (int)vectors[1].Y; yi++)
+            for (int yi = (int)triangle.Points[pi[0]].Y; yi < (int)triangle.Points[pi[1]].Y; yi++)
             {
                 for (int xi = (int)MathF.Round(wx1); xi <= (int)MathF.Round(wx2); xi++)
                 {
@@ -143,10 +144,10 @@ namespace Render3D.Render
                 wx2 += deltaVectors[1];
             }
 
-            if (vectors[0].Y == vectors[1].Y)
+            if (triangle.Points[pi[0]].Y == triangle.Points[pi[1]].Y)
             {
-                wx1 = vectors[0].X < vectors[1].X ? vectors[0].X : vectors[1].X;
-                wx2 = vectors[0].X >= vectors[1].X ? vectors[0].X : vectors[1].X;
+                wx1 = System.Math.Min(triangle.Points[pi[0]].X, triangle.Points[pi[1]].X);
+                wx2 = System.Math.Max(triangle.Points[pi[0]].X, triangle.Points[pi[1]].X);
             }
             if (_dx13 < deltaVectors[2])
             {
@@ -155,7 +156,7 @@ namespace Render3D.Render
                 deltaVectors[2] = tmp;
             }
 
-            for (int yi = (int)vectors[1].Y; yi <= (int)vectors[2].Y; yi++)
+            for (int yi = (int)triangle.Points[pi[1]].Y; yi <= (int)triangle.Points[pi[2]].Y; yi++)
             {
                 for (int xi = (int)MathF.Round(wx1); xi <= (int)MathF.Round(wx2); xi++)
                 {

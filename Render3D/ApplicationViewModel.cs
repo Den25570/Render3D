@@ -65,7 +65,7 @@ namespace Render3D
             ZScale = 100;
 
             LightPosition = Vector3.UnitY * 20;
-            RenderMode = RenderMode.Phong;
+            RenderMode = RenderMode.Texture;
 
             camera = new Camera()
             {

@@ -1,6 +1,7 @@
 ﻿using Render3D.Extensions;
 using Render3D.Math;
 using Render3D.Models;
+using Render3D.Models.Texture;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -39,7 +40,7 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, Scene world)
+        public void RenderModel(Model model, Material material, Scene world)
         {
             try
             {

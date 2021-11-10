@@ -1,4 +1,5 @@
 ﻿using Render3D.Models;
+using Render3D.Models.Texture;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +12,15 @@ namespace Render3D.Parser
 {
     public class OBJParser : IParser
     {
+        private IParser _materialparser;
+
+        public OBJParser() { }
+
+        public OBJParser(IParser materialparser)
+        {
+            _materialparser = materialparser;
+        }
+
         public Object Parse(string path)
         {
             ObjectModel model = new ObjectModel()
@@ -18,7 +28,7 @@ namespace Render3D.Parser
 
                 Vertices = new List<Vector4>(),
                 VertexNormals = new List<Vector3>(),
-                TextureVertices = new List<Vector3>(),
+                TextureVertices = new List<Vector2>(),
                 SpaceVertices = new List<Vector3>(),
                 Faces = new List<List<ObjectModelVertex>>(),
                 Lines = new List<List<int>>(),
@@ -36,6 +46,11 @@ namespace Render3D.Parser
                     {
                         switch (items[0])
                         {
+                            case "mtllib":
+                                var loadedMaterial = _materialparser
+                                    .Parse($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
+                                model.Materials = loadedMaterial != null ? (List<Material>)loadedMaterial : new List<Material>() { new Material() };
+                                break;
                             case "v":
                                 model.Vertices.Add(new Vector4()
                                 {
@@ -46,11 +61,10 @@ namespace Render3D.Parser
                                 });
                                 break;
                             case "vt":
-                                model.TextureVertices.Add(new Vector3()
+                                model.TextureVertices.Add(new Vector2()
                                 {
                                     X = float.Parse(items[1]),
-                                    Y = items.Count >= 3 ? float.Parse(items[2]) : 0.0F,
-                                    Z = items.Count >= 4 ? float.Parse(items[3]) : 0.0F,
+                                    Y = items.Count >= 3 ? float.Parse(items[2]) : 0.0F
                                 });
                                 break;
                             case "vn":

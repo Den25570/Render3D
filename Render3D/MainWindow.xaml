@@ -5,16 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Render3D" d:DataContext="{d:DesignInstance Type=local:ApplicationViewModel}"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        Title="MainWindow" Height="720" Width="1280"
         PreviewKeyDown="main_canvas_KeyDown"
         SizeChanged="Window_SizeChanged"
         >
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
             <ColumnDefinition Width="7*"/>
+            <ColumnDefinition Width="43*"/>
+            <ColumnDefinition Width="350*"/>
         </Grid.ColumnDefinitions>
-        <Menu Height="20" VerticalAlignment="Top" Grid.ColumnSpan="2">
+        <Menu Height="20" VerticalAlignment="Top" Grid.ColumnSpan="3">
             <MenuItem Header="File">
                 <MenuItem Header="Open..." Click="OpenItem_Click"></MenuItem>
                 <MenuItem Header="Exit" Click="ExitItem_Click"></MenuItem>
@@ -36,7 +37,7 @@
                 <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding ZScale, UpdateSourceTrigger=PropertyChanged}" />
             </MenuItem>
         </Menu>
-        <TextBlock Panel.ZIndex="2" Text="{Binding FPS}" Grid.Column="1" Margin="0,1,201,0" Width="200" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"></TextBlock>
-        <Canvas Panel.ZIndex="1" MouseUp="main_canvas_MouseUp" MouseDown="main_canvas_MouseDown" PreviewMouseMove="main_canvas_PreviewMouseMove" Name="main_canvas" Margin="0,20,0,0" Grid.ColumnSpan="2" VerticalAlignment="Stretch"/>
+        <TextBlock Panel.ZIndex="2" Text="{Binding FPS}" Grid.Column="2" Margin="0,1,201,0" Width="200" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"></TextBlock>
+        <Canvas Panel.ZIndex="1" MouseUp="main_canvas_MouseUp" MouseDown="main_canvas_MouseDown" PreviewMouseMove="main_canvas_PreviewMouseMove" Name="main_canvas" Margin="0,20,0,0" Grid.ColumnSpan="3"/>
     </Grid>
 </Window>

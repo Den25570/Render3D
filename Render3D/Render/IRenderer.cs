@@ -1,4 +1,5 @@
 ﻿using Render3D.Models;
+using Render3D.Models.Texture;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,6 @@ namespace Render3D.Render
         public bool HasBitmap { get;}
         public void CreateBitmap(Canvas canvas, int width, int height);
 
-        void RenderModel(Model model, Scene world);
+        void RenderModel(Model model, Material material, Scene world);
     }
 }

@@ -231,13 +231,13 @@ namespace Render3D.Math
             return matrix;
         }
 
-        public static Vector3 LineIntersectionWithPlane(Vector3 plane, Vector3 planeNormal, Vector3 lineStart, Vector3 lineEnd)
+        public static Vector3 LineIntersectionWithPlane(Vector3 plane, Vector3 planeNormal, Vector3 lineStart, Vector3 lineEnd, out float t)
         {
             planeNormal = Vector3.Normalize(planeNormal);
             float planeD = -Vector3.Dot(planeNormal, plane);
             float aD = Vector3.Dot(lineStart, planeNormal);
             float bD = Vector3.Dot(lineEnd, planeNormal);
-            float t = (-planeD - aD) / (bD - aD);
+            t = (-planeD - aD) / (bD - aD);
             Vector3 lineStartToEnd = lineEnd - lineStart;
             Vector3 lineToIntersect = lineStartToEnd * t;
             return lineStart + lineToIntersect;
@@ -252,19 +252,11 @@ namespace Render3D.Math
                 return (planeNormal.X * p.X + planeNormal.Y * p.Y + planeNormal.Z * p.Z - Vector3.Dot(planeNormal, plane));
             };
 
-            List<Vector4> insidePoints = new List<Vector4>();
-            List<Vector4> outsidePoints = new List<Vector4>(); ;
-
-            float d0 = shortestDistance(triangle.Points[0]);
-            float d1 = shortestDistance(triangle.Points[1]);
-            float d2 = shortestDistance(triangle.Points[2]);
-
-            if (d0 >= 0) { insidePoints.Add(triangle.Points[0]); }
-            else { outsidePoints.Add(triangle.Points[0]); }
-            if (d1 >= 0) { insidePoints.Add(triangle.Points[1]); }
-            else { outsidePoints.Add(triangle.Points[1]); }
-            if (d2 >= 0) { insidePoints.Add(triangle.Points[2]); }
-            else { outsidePoints.Add(triangle.Points[2]); }
+            List<int> insidePoints = new List<int>();
+            List<int> outsidePoints = new List<int>();
+            (shortestDistance(triangle.Points[0]) >= 0 ? insidePoints : outsidePoints).Add(0);
+            (shortestDistance(triangle.Points[1]) >= 0 ? insidePoints : outsidePoints).Add(1);
+            (shortestDistance(triangle.Points[2]) >= 0 ? insidePoints : outsidePoints).Add(2);
 
             List<Triangle> result = new List<Triangle> { };
             if (insidePoints.Count() == 3)
@@ -273,110 +265,99 @@ namespace Render3D.Math
             }
             else if (insidePoints.Count() == 1 && outsidePoints.Count() == 2)
             {
-                //TODO: Interpolate normal
-                var newTriangle = new Triangle();
+                var newTriangle = new Triangle(triangle);
 
+                float t1, t2;
                 newTriangle.Points = new Vector4[]{
-                    insidePoints[0],
-                    new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[0].ToVector3(), outsidePoints[0].ToVector3()), 1),
-                    new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[0].ToVector3(), outsidePoints[1].ToVector3()), 1)
+                    triangle.Points[insidePoints[0]],
+                    new Vector4(LineIntersectionWithPlane(plane, planeNormal, triangle.Points[insidePoints[0]].ToVector3(), triangle.Points[outsidePoints[0]].ToVector3(), out t1), 1),
+                    new Vector4(LineIntersectionWithPlane(plane, planeNormal, triangle.Points[insidePoints[0]].ToVector3(), triangle.Points[outsidePoints[1]].ToVector3(), out t2), 1)
                 };
                 newTriangle.Normals = new Vector3[]{
-                    triangle.Normals[0],
-                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle.Points[1]),
-                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle.Points[2]),
+                    triangle.Normals[insidePoints[0]],
+                    triangle.Normals[insidePoints[0]] + t1 * (triangle.Normals[outsidePoints[0]] - triangle.Normals[insidePoints[0]]),
+                    triangle.Normals[insidePoints[0]] + t2 * (triangle.Normals[outsidePoints[1]] - triangle.Normals[insidePoints[0]]),
                 };
                 newTriangle.Colors = new Vector3[]{
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[0]),
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[1]),
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle.Points[2]),
+                    triangle.Colors[insidePoints[0]],
+                    triangle.Colors[insidePoints[0]] + t1 * (triangle.Colors[outsidePoints[0]] - triangle.Colors[insidePoints[0]]),
+                    triangle.Colors[insidePoints[0]] + t2 * (triangle.Colors[outsidePoints[1]] - triangle.Colors[insidePoints[0]]),
+                };
+                newTriangle.TextureCoordinates = new Vector2[]{
+                    triangle.TextureCoordinates[insidePoints[0]],
+                    triangle.TextureCoordinates[insidePoints[0]] + t1 * (triangle.TextureCoordinates[outsidePoints[0]] - triangle.TextureCoordinates[insidePoints[0]]),
+                    triangle.TextureCoordinates[insidePoints[0]] + t2 * (triangle.TextureCoordinates[outsidePoints[1]] - triangle.TextureCoordinates[insidePoints[0]]),
                 };
                 result.Add(newTriangle);
             }
             else if (insidePoints.Count() == 2 && outsidePoints.Count() == 1)
             {
                 //TODO: Interpolate normal
-                var newTriangle1 = new Triangle();
-                var newTriangle2 = new Triangle();
+                var newTriangle1 = new Triangle(triangle);
+                var newTriangle2 = new Triangle(triangle);
 
+                float t;
                 newTriangle1.Points = new Vector4[]{
-                    insidePoints[0],
-                    insidePoints[1],
-                    new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[0].ToVector3(), outsidePoints[0].ToVector3()), 1)
+                    triangle.Points[insidePoints[0]],
+                    triangle.Points[insidePoints[1]],
+                    new Vector4(LineIntersectionWithPlane(plane, planeNormal, triangle.Points[insidePoints[0]].ToVector3(), triangle.Points[outsidePoints[0]].ToVector3(), out t), 1)
                 };
                 newTriangle1.Colors = new Vector3[]{
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[0]),
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[1]),
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle1.Points[2]),
+                    triangle.Colors[insidePoints[0]],
+                    triangle.Colors[insidePoints[1]],
+                    triangle.Colors[insidePoints[0]] + t * (triangle.Colors[outsidePoints[0]] - triangle.Colors[insidePoints[0]]),
                 };
                 newTriangle1.Normals = new Vector3[]{
-                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle1.Points[0]),
-                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle1.Points[1]),
-                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle1.Points[2]),
+                    triangle.Normals[insidePoints[0]],
+                    triangle.Normals[insidePoints[1]],
+                    triangle.Normals[insidePoints[0]] + t * (triangle.Normals[outsidePoints[0]] - triangle.Normals[insidePoints[0]]),
                 };
+                newTriangle1.TextureCoordinates = new Vector2[]{
+                    triangle.TextureCoordinates[insidePoints[0]],
+                    triangle.TextureCoordinates[insidePoints[1]],
+                    triangle.TextureCoordinates[insidePoints[0]] + t * (triangle.TextureCoordinates[outsidePoints[0]] - triangle.TextureCoordinates[insidePoints[0]]),
+                };
+
                 newTriangle2.Points = new Vector4[]{
-                    insidePoints[1],
+                    triangle.Points[insidePoints[1]],
                     newTriangle1.Points[2],
-                    new Vector4(LineIntersectionWithPlane(plane, planeNormal, insidePoints[1].ToVector3(), outsidePoints[0].ToVector3()), 1)
+                    new Vector4(LineIntersectionWithPlane(plane, planeNormal, triangle.Points[insidePoints[1]].ToVector3(), triangle.Points[outsidePoints[0]].ToVector3(), out t), 1)
                 };
                 newTriangle2.Normals = new Vector3[]{
-                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle2.Points[0]),
-                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle2.Points[1]),
-                    InterpolateNormal(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Normals[0], triangle.Normals[1], triangle.Normals[2], newTriangle2.Points[2]),
+                    triangle.Normals[insidePoints[1]],
+                    newTriangle1.Normals[2],
+                    triangle.Normals[insidePoints[1]] + t * (triangle.Normals[outsidePoints[0]] - triangle.Normals[insidePoints[1]]),
                 };
                 newTriangle2.Colors = new Vector3[]{
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[0]),
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[1]),
-                    InterpolateColor(triangle.Points[0], triangle.Points[1], triangle.Points[2], triangle.Colors[0], triangle.Colors[1], triangle.Colors[2], newTriangle2.Points[2]),
+                    triangle.Colors[insidePoints[1]],
+                    newTriangle1.Colors[2],
+                    triangle.Colors[insidePoints[1]] + t * (triangle.Colors[outsidePoints[0]] - triangle.Colors[insidePoints[1]]),
+                };
+                newTriangle2.TextureCoordinates = new Vector2[]{
+                    triangle.TextureCoordinates[insidePoints[1]],
+                    newTriangle1.TextureCoordinates[2],
+                    triangle.TextureCoordinates[insidePoints[1]] + t * (triangle.TextureCoordinates[outsidePoints[0]] - triangle.TextureCoordinates[insidePoints[1]]),
                 };
                 result.Add(newTriangle1);
                 result.Add(newTriangle2);
             }
             return result;
         }
-
-        public static float EdgeFunction(float x1, float y1, float x2, float y2, float x3, float y3)
-        {
-            return (x1 - x2) * (y3 - y1) - (y1 - y2) * (x3 - x1);
-        }
-
-        public static Vector3 InterpolateColor(Vector4 v1, Vector4 v2, Vector4 v3, Vector3 i1, Vector3 i2, Vector3 i3, Vector4 v)
-        {
-            var bX = ((v2.Y - v3.Y) * (v.X - v3.X) + (v3.X - v2.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
-            var bY = ((v3.Y - v1.Y) * (v.X - v3.X) + (v1.X - v3.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
-            var bZ = 1 - bX - bY;
-            return i1 * bX + i2 * bY + i3 * bZ;
-        }
-
-        public static Vector3 InterpolateNormal(Vector4 v1, Vector4 v2, Vector4 v3, Vector3 n1, Vector3 n2, Vector3 n3, Vector4 v)
-        {
-            var bX = ((v2.Y - v3.Y) * (v.X - v3.X) + (v3.X - v2.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
-            var bY = ((v3.Y - v1.Y) * (v.X - v3.X) + (v1.X - v3.X) * (v.Y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
-            var bZ = 1 - bX - bY;
-            return Vector3.Normalize(n1 * bX + n2 * bY + n3 * bZ);
-        }
-        public static float InterpolateZ(int x1, int y1, int z1, int x2, int y2, int z2, int x3, int y3, int z3, float x, float y)
-        {
-            var bX = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
-            var bY = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
-            var bZ = 1 - bX - bY;
-            return z1 * bX + z2 * bY + z3 * bZ;
-        }
-
-        public static float InterpolateZ(Vector3 v1, Vector3 v2, Vector3 v3, float x, float y)
-        {
-            var bX = ((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
-            var bY = ((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
-            var bZ = 1 - bX - bY;
-            return v1.Z * bX + v2.Z * bY + v3.Z * bZ;
-        }
-
         public static float InterpolateZ(Vector4 v1, Vector4 v2, Vector4 v3, float x, float y)
         {
             var W1 = ((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
             var W2 = ((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
             var W3 = 1 - W1 - W2;
             return v1.Z * W1 + v2.Z * W2 + v3.Z * W3;
+        }
+
+        public static Vector3 GetBarycenter(Vector4 v1, Vector4 v2, Vector4 v3, float x, float y)
+        {
+            var div = 1 / ((v2.Y - v3.Y) * (v1.X - v3.X) + (v3.X - v2.X) * (v1.Y - v3.Y));
+            var W1 = ((v2.Y - v3.Y) * (x - v3.X) + (v3.X - v2.X) * (y - v3.Y)) * div;
+            var W2 = ((v3.Y - v1.Y) * (x - v3.X) + (v1.X - v3.X) * (y - v3.Y)) * div;
+            var W3 = 1 - W1 - W2;
+            return new Vector3(W1, W2, W3);
         }
     }
 }

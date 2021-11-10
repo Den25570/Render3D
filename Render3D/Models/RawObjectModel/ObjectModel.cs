@@ -1,5 +1,6 @@
 ﻿using Render3D.Extensions;
 using Render3D.Models;
+using Render3D.Models.Texture;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +12,13 @@ namespace Render3D.Models
 {
     public class ObjectModel
     {
-        public List<Vector4> Vertices;
-        public List<Vector3> VertexNormals;
-        public List<Vector3> TextureVertices;
-        public List<Vector3> SpaceVertices;
-
-        public List<List<ObjectModelVertex>> Faces;
-        public List<List<int>> Lines;
+        public List<Vector4> Vertices { get; set; }
+        public List<Vector3> VertexNormals { get; set; }
+        public List<Vector2> TextureVertices { get; set; }
+        public List<Vector3> SpaceVertices { get; set; }
+        public List<List<ObjectModelVertex>> Faces { get; set; }
+        public List<List<int>> Lines { get; set; }
+        public List<Material> Materials { get; set; }
 
         public void CalculateNormals()
         {
