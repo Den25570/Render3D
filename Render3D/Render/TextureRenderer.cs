@@ -60,7 +60,7 @@ namespace Render3D.Render
                 Parallel.For(0, model.Triangles.Length, (i) =>
                 {
                     //Draw triangle
-                    DrawTriangle(model.Triangles[i], shader);
+                    DrawTriangle(model.Triangles[i], scene);
                 });
                 //DumbPixelFilter();
                 WritePixelsToBitmap();
@@ -74,7 +74,7 @@ namespace Render3D.Render
 
         }
 
-        private void DrawTriangle(Triangle triangle, IShader shader)
+        private void DrawTriangle(Triangle triangle, Scene scene)
         {
             triangle.Points = new Vector4[]
             {
@@ -101,7 +101,34 @@ namespace Render3D.Render
                     _zBufferSpinlock[zIndex].Enter(ref gotLock);
                     if (zValue < _zBuffer[zIndex])
                     {
-                        _pixelBuffer[zIndex] = (barycenter.X * triangle.Colors[pi[0]] + barycenter.Y * triangle.Colors[pi[1]] + barycenter.Z * triangle.Colors[pi[2]]).ToRGB();
+                        var pos = new Vector3(xi, yi, zValue);
+                        var normal = (barycenter.X * triangle.Normals[pi[0]] + barycenter.Y * triangle.Normals[pi[1]] + barycenter.Z * triangle.Normals[pi[2]]);
+
+                        var coord = (barycenter.X * triangle.TextureCoordinates[pi[0]] + barycenter.Y * triangle.TextureCoordinates[pi[1]] + barycenter.Z * triangle.TextureCoordinates[pi[2]]);
+                        coord = Vector2.Clamp(coord, Vector2.Zero, Vector2.One);
+                        var ambientColor = triangle.Material.GetAmbientColor(coord.X, coord.Y);
+                        var diffuseColor = triangle.Material.GetDiffuseColor(coord.X, coord.Y);
+                        var specularColor = triangle.Material.GetSpecularColor(coord.X, coord.Y);
+
+                        var color = Vector3.Zero;
+                        for (int li = 0; li < scene.Lights.Length; li++)
+                        {
+                            var l = Vector3.Normalize(scene.Lights[li] - pos);
+                            var e = Vector3.Normalize(-pos);
+                            var r = Vector3.Normalize(-Vector3.Reflect(l, normal));
+
+                            Vector3 Iamb = ambientColor * scene.LightsColors[li] * scene.BackgroundLightIntensity;
+
+                            Vector3 Idiff = diffuseColor * scene.LightsColors[li] * MathF.Max(Vector3.Dot(normal, l), 0.0f);
+                            Idiff = Vector3.Clamp(Idiff, Vector3.Zero, Vector3.One);
+
+                            Vector3 Ispec = specularColor * scene.LightsColors[li] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), 5);
+                            Ispec = Vector3.Clamp(Ispec, Vector3.Zero, Vector3.One);
+
+                            color += Iamb + Idiff + Ispec;
+                        }
+
+                        _pixelBuffer[zIndex] = specularColor.ToRGB();
                         _zBuffer[zIndex] = zValue;
                     }
                 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Render3D.Models.Texture;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,7 @@ namespace Render3D.Models
         public int v;
         public int vt;
         public int vn;
+
+        public Material material;
     }
 }

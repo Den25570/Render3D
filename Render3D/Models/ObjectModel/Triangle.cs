@@ -1,4 +1,5 @@
 ﻿using Render3D.Math;
+using Render3D.Models.Texture;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,10 +19,13 @@ namespace Render3D.Models
 
         public Vector2[] TextureCoordinates;
 
+        public Material Material;
+
         public Triangle() { }
 
         public Triangle(Triangle triangle)
         {
+            Material = triangle.Material;
             Points = (Vector4[])triangle.Points.Clone();
             Normals = (Vector3[])triangle.Normals.Clone();
             Colors = (Vector3[])triangle.Colors.Clone();

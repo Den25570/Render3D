@@ -19,6 +19,7 @@ namespace Render3D.Parser
             if (File.Exists(path))
             using (StreamReader reader = File.OpenText(path))
             {
+                List<Task> TaskList = new List<Task>();
                 for (string stringLine; (stringLine = reader.ReadLine()) != null;)
                 {
                     List<string> items = stringLine.Replace('.', ',').Split(' ').ToList();
@@ -30,8 +31,8 @@ namespace Render3D.Parser
                                 // Material color and illumination statements:
                                 case "newmtl":
                                     material = new Material();
-                                    materials.Add(material);
                                     material.Name = items[1];
+                                    materials.Add(material);
                                     break;
                                 case "Ka":
                                     material.AmbientColor = new System.Numerics.Vector3(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3]));
@@ -62,22 +63,38 @@ namespace Render3D.Parser
                                     break;
 
                                 case "map_Ka":
-                                    material.AmbientColorMap = Image.FromFile(items[1]);
+                                    var bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
+                                    var task = new Task(() => { material.AmbientColorMap = material.ImageToMap(bmp); });
+                                    task.Start();
+                                    TaskList.Add(task);
                                     break;
                                 case "map_Kd":
-                                    material.DiffuseColorMap = Image.FromFile(items[1]);
+                                    bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
+                                    task = new Task(() => { material.DiffuseColorMap = material.ImageToMap(bmp); });
+                                    task.Start();
+                                    TaskList.Add(task);
                                     break;
                                 case "map_Ks":
-                                    material.SpecularColorMap = Image.FromFile(items[1]);
+                                    bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
+                                    task = new Task(() => { material.SpecularColorMap = material.ImageToMap(bmp); });
+                                    task.Start();
+                                    TaskList.Add(task);
                                     break;
                                 case "map_d":
-                                    material.DissolveMap = Image.FromFile(items[1]);
+                                    bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
+                                    task = new Task(() => { material.DissolveMap = material.ImageToMap(bmp); });
+                                    task.Start();
+                                    TaskList.Add(task);
                                     break;
                                 case "map_Ns":
-                                    material.SpecularHighlightsMap = Image.FromFile(items[1]);
+                                    bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
+                                    task = new Task(() => { material.SpecularHighlightsMap = material.ImageToMap(bmp); });
+                                    task.Start();
+                                    TaskList.Add(task);
                                     break;
                             }
                 }
+                Task.WaitAll(TaskList.ToArray());
             }
             return materials;
         }

@@ -37,6 +37,7 @@ namespace Render3D.Parser
 
             using (StreamReader reader = File.OpenText(path))
             {
+                Material currentMaterial = null;
                 for (string stringLine; (stringLine = reader.ReadLine()) != null;)
                 {
                     List<string> items = stringLine.Replace('.', ',').Split(' ').ToList();
@@ -50,6 +51,9 @@ namespace Render3D.Parser
                                 var loadedMaterial = _materialparser
                                     .Parse($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
                                 model.Materials = loadedMaterial != null ? (List<Material>)loadedMaterial : new List<Material>() { new Material() };
+                                break;
+                            case "usemtl":
+                                currentMaterial = model.Materials.FirstOrDefault(m => m.Name == items[1]);
                                 break;
                             case "v":
                                 model.Vertices.Add(new Vector4()
@@ -96,6 +100,7 @@ namespace Render3D.Parser
                                             v = int.Parse(vertexIndices[0]),
                                             vt = vertexIndices.Length > 1 && vertexIndices[1] != "" ? int.Parse(vertexIndices[1]) : 0,
                                             vn = vertexIndices.Length > 2 ? int.Parse(vertexIndices[2]) : 0,
+                                            material = currentMaterial,
                                         });
                                     }
                                 }

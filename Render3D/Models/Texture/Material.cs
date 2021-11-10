@@ -52,17 +52,57 @@ namespace Render3D.Models.Texture
         recommended.*/
         public float OpticalDensity { get; set; }
 
-
         // texture maps
-        public Image AmbientColorMap { get; set; }
-        public Image DiffuseColorMap { get; set; }
-        public Image SpecularColorMap { get; set; }
-        public Image SpecularHighlightsMap { get; set; }
-        public Image DissolveMap { get; set; }
-
-
+        public Vector3[,] AmbientColorMap { get; set; }
+        public Vector3[,] DiffuseColorMap { get; set; }
+        public Vector3[,] SpecularColorMap { get; set; }
+        public Vector3[,] SpecularHighlightsMap { get; set; }
+        public Vector3[,] DissolveMap { get; set; }
 
         // reflection map
         // None yet
+
+        public Vector3[,] ImageToMap(Bitmap img)
+        {
+            var map = new Vector3[img.Width,img.Height];
+            for (int i = 0; i < img.Width; i++)
+                for (int j = 0; j < img.Height; j++)
+                {
+                    var pixel = img.GetPixel(i, j);
+                    map[i, j] = new Vector3(pixel.R / 255.0f, pixel.G / 255.0f, pixel.B / 255.0f);
+                }
+            return map;
+        }
+
+        public Vector3 GetAmbientColor(float x, float y)
+        {
+            if (AmbientColorMap != null)
+            {
+                var mapSize = AmbientColorMap.GetLength(1) - 1;
+                return AmbientColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+            }
+            return AmbientColor;
+        }
+
+        public Vector3 GetDiffuseColor(float x, float y)
+        {
+            if (DiffuseColorMap != null)
+            {
+                var mapSize = DiffuseColorMap.GetLength(1) - 1;
+                return DiffuseColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+            }
+            return DiffuseColor;
+        }
+
+        public Vector3 GetSpecularColor(float x, float y)
+        {
+            if (SpecularColorMap != null)
+            {
+                var mapSize = SpecularColorMap.GetLength(1) - 1;
+                return SpecularColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+            }
+            return SpecularColor;
+
+        }
     }
 }
