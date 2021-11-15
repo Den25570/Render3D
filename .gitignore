@@ -332,13 +332,3 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
-
-*.mtl
-*.jpg
-*.png
-
-*.fbx
-*.3ds
-Files/Car/.DS_Store
-*.blend
-*.dae
