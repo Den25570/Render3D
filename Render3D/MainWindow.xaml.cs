@@ -88,15 +88,14 @@ namespace Render3D
                 transformedScene.TransformLights(viewMatrix); // Scene lights -> View
                 transformedModel.CalculateColor(scene); // Model colors
                 transformedModel.ClipTriangles(new Vector3(0, 0, dataContext.Camera.ZNear), new Vector3(0, 0, 1)); // view clip Z near
-                transformedModel.TransformModel(projectionMatrix); // 3D -> 2D projection
-                transformedModel.TransformModel(viewportMatrix); // 2D projection -> viewport projection
+                transformedModel.TransformModel(projectionMatrix * viewportMatrix); // 3D -> 2D projection | 2D projection -> viewport projection
                 transformedModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitY); // viewport clip Y
                 transformedModel.ClipTriangles(new Vector3(0, (float)main_canvas.ActualHeight - 1, 0), -Vector3.UnitY); // viewport clip -Y
                 transformedModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitX); // viewport clip X
                 transformedModel.ClipTriangles(new Vector3((float)main_canvas.ActualWidth - 1, 0, 0), -Vector3.UnitX); // viewport clip -X
 
                 //Render
-                _renderer.RenderModel(transformedModel, null, scene); ;
+                _renderer.RenderModel(transformedModel, modelMatrix * viewMatrix, projectionMatrix * viewportMatrix, scene);
             }
             stopwatch.Stop();
             dataContext.FPS = stopwatch.ElapsedMilliseconds;

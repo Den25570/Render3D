@@ -20,7 +20,7 @@ namespace Render3D.Models.Texture
         /*"Ns "A high exponent 
         results in a tight, concentrated highlight.  Ns values normally range 
         from 0 to 1000.*/
-        public float SpecularHighlights { get; set; }
+        public float SpecularHighlights { get; set; } = 60;
 
         /*"d" is the amount this material dissolves into the background.  A 
         factor of 1.0 is fully opaque.  This is the default when a new material 
@@ -58,6 +58,7 @@ namespace Render3D.Models.Texture
         public Vector3[,] SpecularColorMap { get; set; }
         public Vector3[,] SpecularHighlightsMap { get; set; }
         public Vector3[,] DissolveMap { get; set; }
+        public Vector3[,] NormalsMap { get; set; }
 
         // reflection map
         // None yet
@@ -103,6 +104,26 @@ namespace Render3D.Models.Texture
             }
             return SpecularColor;
 
+        }
+
+        public float GetSpecularHighlight(float x, float y)
+        {
+            if (SpecularHighlightsMap != null)
+            {
+                var mapSize = SpecularHighlightsMap.GetLength(1) - 1;
+                return SpecularHighlightsMap[(int)(x * mapSize), (int)(y * mapSize)].X / 255.0f;
+            }
+            return SpecularHighlights;
+        }
+
+        public Vector3? GetNormal(float x, float y)
+        {
+            if (NormalsMap != null)
+            {
+                var mapSize = NormalsMap.GetLength(1) - 1;
+                return NormalsMap[(int)(x * mapSize), (int)(y * mapSize)];
+            }
+            return null;
         }
     }
 }

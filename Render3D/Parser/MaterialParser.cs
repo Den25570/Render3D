@@ -14,6 +14,7 @@ namespace Render3D.Parser
         public object Parse(string path)
         {
             List<Material> materials = new List<Material>();
+            int materialsArrayLength = 0;
             Material material = null;
 
             if (File.Exists(path))
@@ -30,9 +31,11 @@ namespace Render3D.Parser
                             {
                                 // Material color and illumination statements:
                                 case "newmtl":
+                                    Task.WaitAll(TaskList.ToArray());
                                     material = new Material();
                                     material.Name = items[1];
                                     materials.Add(material);
+                                    materialsArrayLength++;
                                     break;
                                 case "Ka":
                                     material.AmbientColor = new System.Numerics.Vector3(float.Parse(items[1]), float.Parse(items[2]), float.Parse(items[3]));
@@ -49,7 +52,7 @@ namespace Render3D.Parser
                                 case "illum":
                                     material.IlluminationModel = float.Parse(items[1]);
                                     break;
-                                case "Ns ":
+                                case "Ns":
                                     material.SpecularHighlights = float.Parse(items[1]);
                                     break;
                                 case "Ni":
@@ -92,9 +95,14 @@ namespace Render3D.Parser
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
+                                case "map_Bump":
+                                    bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
+                                    task = new Task(() => { material.NormalsMap = material.ImageToMap(bmp); });
+                                    task.Start();
+                                    TaskList.Add(task);
+                                    break;
                             }
                 }
-                Task.WaitAll(TaskList.ToArray());
             }
             return materials;
         }

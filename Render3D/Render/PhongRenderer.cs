@@ -47,9 +47,8 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, Material material, Scene scene)
+        public void RenderModel(Model model, Matrix4x4 modelToWorld, Matrix4x4 worldToPerspective, Scene scene)
         {
-            var shader = new PhongShader(scene, material);
             try
             {
                 _bitmap.Lock();
@@ -60,7 +59,7 @@ namespace Render3D.Render
                 Parallel.For(0, model.Triangles.Length, (i) =>
                 {
                     //Draw triangle
-                    DrawTriangle(model.Triangles[i], shader);
+                    DrawTriangle(model.Triangles[i]);
                 });
                 //DumbPixelFilter();
                 WritePixelsToBitmap();
@@ -74,7 +73,7 @@ namespace Render3D.Render
 
         }
 
-        private void DrawTriangle(Triangle triangle, IShader shader)
+        private void DrawTriangle(Triangle triangle)
         {
             var vectors = new List<Vector4>()
             {

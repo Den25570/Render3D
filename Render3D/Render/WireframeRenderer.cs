@@ -40,7 +40,7 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, Material material, Scene world)
+        public void RenderModel(Model model, Matrix4x4 modelToWorld, Matrix4x4 worldToPerspective, Scene world)
         {
             try
             {

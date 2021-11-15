@@ -72,9 +72,8 @@ namespace Render3D.Models
             List<Triangle> triangles = new List<Triangle>();
             for (int i = 0; i < loadedModel.Faces.Count(); i++)
             {
-                for(int j = 0; j < loadedModel.Faces[i].Count() - 1; j++)
+                for(int j = 1; j < loadedModel.Faces[i].Count() - 1; j++)
                 {
-
                     var v1 = loadedModel.Vertices[loadedModel.Faces[i][0].v - 1];
                     var v2 = loadedModel.Vertices[loadedModel.Faces[i][j].v - 1];
                     var v3 = loadedModel.Vertices[loadedModel.Faces[i][j + 1].v - 1];
@@ -84,14 +83,14 @@ namespace Render3D.Models
                     var n3 = loadedModel.VertexNormals[loadedModel.Faces[i][j + 1].vn - 1];
 
                     var vt1 = loadedModel.Faces[i][0].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][0].vt - 1] : new Vector2();
-                    var vt2 = loadedModel.Faces[i][0].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][j].vt - 1] : new Vector2();
-                    var vt3 = loadedModel.Faces[i][0].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][j + 1].vt - 1] : new Vector2();
+                    var vt2 = loadedModel.Faces[i][j].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][j].vt - 1] : new Vector2();
+                    var vt3 = loadedModel.Faces[i][j + 1].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][j + 1].vt - 1] : new Vector2();
                     triangles.Add(new Triangle()
                     {
                         Material = loadedModel.Faces[i][j].material,
                         TextureCoordinates = new Vector2[] { vt1, vt2, vt3 },
-                        Points = new Vector4[] { v1, v2, v3 },
-                        Normals = new Vector3[] { n1, n2, n3 },
+                        Points = new Vector4[3] { v1, v2, v3 },
+                        Normals = new Vector3[3] { n1, n2, n3 },
                         Colors = new Vector3[3] { Vector3.UnitZ, Vector3.UnitZ, Vector3.UnitZ }
                     });
                 }
@@ -106,7 +105,6 @@ namespace Render3D.Models
                 for (int j = 0; j < Triangles[i].Points.Length; j++)
                 {
                     Triangles[i].Points[j] = Vector4.Transform(Triangles[i].Points[j], transform);
-                    //Triangles[i].TextureCoordinates[j] /= Triangles[i].Points[j].W;
                     Triangles[i].Points[j] /= Triangles[i].Points[j].W;
                 }
                 if (transformNormals)
