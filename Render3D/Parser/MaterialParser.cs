@@ -101,6 +101,12 @@ namespace Render3D.Parser
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
+                                case "refl":
+                                    bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
+                                    task = new Task(() => { var map = material.ImageToMap(bmp);  materials.ForEach(m => m.ReflectionMap = map); });
+                                    task.Start();
+                                    TaskList.Add(task);
+                                    break;
                             }
                 }
             }
