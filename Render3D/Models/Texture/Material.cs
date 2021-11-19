@@ -59,6 +59,7 @@ namespace Render3D.Models.Texture
         public Vector3[,] SpecularHighlightsMap { get; set; }
         public Vector3[,] DissolveMap { get; set; }
         public Vector3[,] NormalsMap { get; set; }
+        public Vector3[,] ReflectionMap { get; set; }
 
         // reflection map
         // None yet
@@ -122,6 +123,17 @@ namespace Render3D.Models.Texture
             {
                 var mapSize = NormalsMap.GetLength(1) - 1;
                 return NormalsMap[(int)(x * mapSize), (int)(y * mapSize)];
+            }
+            return null;
+        }
+
+        public Vector3? GetReflection(float x, float y)
+        {
+            if (ReflectionMap != null)
+            {
+                var mapSizeX = ReflectionMap.GetLength(0) - 1;
+                var mapSizeY = ReflectionMap.GetLength(1) - 1;
+                return ReflectionMap[(int)(x * mapSizeX), (int)(y * mapSizeY)];
             }
             return null;
         }
