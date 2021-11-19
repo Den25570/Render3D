@@ -384,5 +384,12 @@ namespace Render3D.Math
                 normal.X, normal.Y, normal.Z, 0,
                 0,0,0,1);
         }
+
+        public static Matrix4x4 GetLightViewMatrix(Vector3 lightPos, Vector3 modelCenter, float zNear, float zFar)
+        {
+            Matrix4x4 lightProjection = Matrix4x4.CreateOrthographicOffCenter(-10.0f, 10.0f, -10.0f, 10.0f, zNear, zFar);
+            Matrix4x4 lightView = Matrix4x4.CreateLookAt(lightPos, modelCenter, Vector3.UnitY);
+            return lightView * lightProjection;
+        }
     }
 }

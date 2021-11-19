@@ -70,7 +70,7 @@ namespace Render3D
             
             if (model != null)
             {
-                //
+                // Matrices
                 var viewModel = new Model(model);
                 var modelMatrix = Math3D.GetTransformationMatrix(
                     new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F),
@@ -92,15 +92,20 @@ namespace Render3D
                 viewModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitX); // viewport clip X
                 viewModel.ClipTriangles(new Vector3((float)main_canvas.ActualWidth - 1, 0, 0), -Vector3.UnitX); // viewport clip -X
 
+                // Transformation to world view with all clipped triangles
                 Matrix4x4.Invert(viewMatrix, out var invView);
                 Matrix4x4.Invert(projectionMatrix, out var invProj);
                 Matrix4x4.Invert(viewportMatrix, out var invViewport);
                 var worldModel = new Model(viewModel);
-                worldModel.TransformModel(invViewport);
-                worldModel.TransformModel(invProj);
-                worldModel.TransformModel(invView);
+                worldModel.TransformModel(invViewport * invProj * invView);
 
-                //Render
+                // Shadow casting
+                for(int i = 0; i < scene.Lights.Length; i++)
+                {
+                    var lightSpaceMatrix = Math3D.GetLightViewMatrix(scene.Lights[i].ToVector3(), Vector3.Zero, dataContext.Camera.ZNear, dataContext.Camera.ZFar);
+                }
+
+                // Render
                 _renderer.RenderModel(viewModel, worldModel, scene);
             }
             stopwatch.Stop();

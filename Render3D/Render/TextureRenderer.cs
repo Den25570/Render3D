@@ -105,15 +105,16 @@ namespace Render3D.Render
 
                         var pos = (barycenter.X * triangle3D.Points[pi[0]] + barycenter.Y * triangle3D.Points[pi[1]] + barycenter.Z * triangle3D.Points[pi[2]]).ToVector3();
                         
-                        var ambientColor = triangle.Material.GetAmbientColor(coord.X, 1 - coord.Y);
-                        var diffuseColor = triangle.Material.GetDiffuseColor(coord.X, 1 - coord.Y);
-                        var specularColor = triangle.Material.GetSpecularColor(coord.X, 1 - coord.Y);
-                        var specularHl = triangle.Material.GetSpecularHighlight(coord.X, 1 - coord.Y);
+                        var ambientColor = triangle.Material.GetAmbientColor(coord.X, 1 - coord.Y); //Ka
+                        var diffuseColor = triangle.Material.GetDiffuseColor(coord.X, 1 - coord.Y); //Kd
+                        var specularColor = triangle.Material.GetSpecularColor(coord.X, 1 - coord.Y); //Ks
+                        var specularHl = triangle.Material.GetSpecularHighlight(coord.X, 1 - coord.Y); //Ns
 
                         // normal mapping
                         Vector3 normal = Vector3.Normalize(barycenter.X * triangle.Normals[pi[0]] + barycenter.Y * triangle.Normals[pi[1]] + barycenter.Z * triangle.Normals[pi[2]]);
                         if (triangle.Material.NormalsMap != null)
                         {
+                            //normal = (triangle.Normals[pi[1]] + triangle.Normals[pi[2]] + triangle.Normals[pi[0]]) / 3;
                             var tbn = Math3D.GetTriangleTBNMatrix(triangle, normal);
                             normal = triangle.Material.GetNormal(coord.X, 1 - coord.Y).Value;
                             normal = Vector3.Normalize(Vector3.Transform(normal, tbn));
