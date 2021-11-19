@@ -29,7 +29,7 @@ namespace Render3D.Shaders
             var result = new Vector3();
             for (int li = 0; li < _scene.Lights.Length; li++)
             {
-                var l = Vector3.Normalize(_scene.Lights[li] - position);
+                var l = Vector3.Normalize(_scene.Lights[li].ToVector3() - position);
                 var e = Vector3.Normalize(-position);
                 var r = Vector3.Normalize(-Vector3.Reflect(l, normal));
 

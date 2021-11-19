@@ -64,6 +64,18 @@ namespace Render3D.Models.Texture
         // reflection map
         // None yet
 
+        public Vector3[,] ImageToNormalsMap(Bitmap img)
+        {
+            var map = new Vector3[img.Width, img.Height];
+            for (int i = 0; i < img.Width; i++)
+                for (int j = 0; j < img.Height; j++)
+                {
+                    var pixel = img.GetPixel(i, j);
+                    map[i, j] = new Vector3(pixel.R / 255.0f, pixel.G / 255.0f, pixel.B / 255.0f) * 2 - Vector3.One;
+                }
+            return map;
+        }
+
         public Vector3[,] ImageToMap(Bitmap img)
         {
             var map = new Vector3[img.Width,img.Height];

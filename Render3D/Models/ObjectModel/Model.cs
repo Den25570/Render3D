@@ -46,8 +46,8 @@ namespace Render3D.Models
                     var result = new Vector3();
                     for (int li = 0; li < scene.Lights.Length; li++)
                     {
-                        var l = Vector3.Normalize(scene.Lights[li] - Triangles[i].Points[j].ToVector3());
-                        var e = Vector3.Normalize(-Triangles[i].Points[j].ToVector3());
+                        var l = Vector3.Normalize((scene.Lights[li] - Triangles[i].Points[j]).ToVector3());
+                        var e = Vector3.Normalize(scene.MainCamera.Position-Triangles[i].Points[j].ToVector3());
                         var r = Vector3.Normalize(-Vector3.Reflect(l, Triangles[i].Normals[j]));
 
                         Vector3 Iamb = scene.LightsColors[li] * scene.BackgroundLightIntensity;

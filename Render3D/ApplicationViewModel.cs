@@ -27,7 +27,7 @@ namespace Render3D
         private float yRotation;
         private float zRotation;
 
-        public Vector3 lightPosition;
+        public Vector4 lightPosition;
 
         public RenderMode renderMode;
 
@@ -48,7 +48,7 @@ namespace Render3D
 
         public Camera Camera { get { return camera; } set { camera = value; OnPropertyChanged("Camera"); } }
         public RenderMode RenderMode { get { return renderMode; } set { renderMode = value; OnPropertyChanged("RenderMode"); } }
-        public Vector3 LightPosition { get { return lightPosition; } set { lightPosition = value; OnPropertyChanged("LightPosition"); } }
+        public Vector4 LightPosition { get { return lightPosition; } set { lightPosition = value; OnPropertyChanged("LightPosition"); } }
 
         public ApplicationViewModel()
         {
@@ -64,7 +64,7 @@ namespace Render3D
             YScale = 100;
             ZScale = 100;
 
-            LightPosition = Vector3.UnitY * 20;
+            LightPosition = Vector4.UnitY * 10;
             RenderMode = RenderMode.Texture;
 
             camera = new Camera()

@@ -40,7 +40,7 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, Matrix4x4 modelToWorld, Matrix4x4 worldToPerspective, Scene world)
+        public void RenderModel(Model viewModel, Model worldModel, Scene scene)
         {
             try
             {
@@ -48,15 +48,15 @@ namespace Render3D.Render
                 Array.Fill(_zBuffer, float.MaxValue);
                 _bitmap.Clear(System.Windows.Media.Color.FromRgb(0, 0, 0));
 
-                foreach (var triangle in model.Triangles)
+                foreach (var triangle in viewModel.Triangles)
                 {
                     //Draw triangle
                     var n = (triangle.Normals[0] + triangle.Normals[1] + triangle.Normals[2]) / 3;
                     var v = (triangle.Points[0] + triangle.Points[1] + triangle.Points[2]) / 3;
 
                     var dt = 0.05f;
-                    foreach (var source in world.Lights)
-                        dt += MathF.Max(Vector3.Dot(n, Vector3.Normalize(source)), 0f);
+                    foreach (var source in scene.Lights)
+                        dt += MathF.Max(Vector3.Dot(n, Vector3.Normalize(source.ToVector3())), 0f);
                     dt = MathF.Min(dt, 1f);
 
                     var color = (int)(0xFF * dt) * 0x100 * 0x100 + (int)(0xFF * dt) * 0x100 + (int)(0xFF * dt);

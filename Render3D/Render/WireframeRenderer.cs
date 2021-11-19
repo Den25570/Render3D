@@ -40,7 +40,7 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, Matrix4x4 modelToWorld, Matrix4x4 worldToPerspective, Scene world)
+        public void RenderModel(Model viewModel, Model worldModel, Scene scene)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace Render3D.Render
                 Array.Fill(_zBuffer, float.MaxValue);
                 _bitmap.Clear(System.Windows.Media.Color.FromRgb(0, 0, 0));
 
-                foreach (var triangle in model.Triangles)
+                foreach (var triangle in viewModel.Triangles)
                 {
                     DrawLine((int)triangle.Points[0].X, (int)triangle.Points[0].Y, (int)triangle.Points[1].X, (int)triangle.Points[1].Y, 0x00FF00);
                     DrawLine((int)triangle.Points[1].X, (int)triangle.Points[1].Y, (int)triangle.Points[2].X, (int)triangle.Points[2].Y, 0x00FF00);

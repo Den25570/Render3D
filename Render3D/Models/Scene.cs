@@ -9,7 +9,7 @@ namespace Render3D.Models
 {
     public class Scene
     {
-        public Vector3[] Lights { get; set; }
+        public Vector4[] Lights { get; set; }
         public Vector3[] LightsColors { get; set; }
         public float BackgroundLightIntensity { get; set; }
         public float MirrorLightIntensity { get; set; }
@@ -19,7 +19,7 @@ namespace Render3D.Models
 
         public Scene(Scene scene)
         {
-            Lights = (Vector3[])scene.Lights.Clone();
+            Lights = (Vector4[])scene.Lights.Clone();
             LightsColors = (Vector3[])scene.LightsColors.Clone();
             MainCamera = scene.MainCamera;
             BackgroundLightIntensity = scene.BackgroundLightIntensity;
@@ -27,7 +27,7 @@ namespace Render3D.Models
 
         public void TransformLights(Matrix4x4 matrix)
         {
-            Lights = Lights.Select(l => Vector3.Transform(l, matrix)).ToArray();
+            Lights = Lights.Select(l => Vector4.Transform(l, matrix)).ToArray();
         }
     }
 }

@@ -47,7 +47,7 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, Matrix4x4 modelToWorld, Matrix4x4 worldToPerspective, Scene scene)
+        public void RenderModel(Model viewModel, Model worldModel, Scene scene)
         {
             try
             {
@@ -56,10 +56,10 @@ namespace Render3D.Render
                 Array.Fill(_pixelBuffer, 0);
                 _bitmap.Clear(Color.FromRgb(0, 0, 0));
 
-                Parallel.For(0, model.Triangles.Length, (i) =>
+                Parallel.For(0, viewModel.Triangles.Length, (i) =>
                 {
                     //Draw triangle
-                    DrawTriangle(model.Triangles[i]);
+                    DrawTriangle(viewModel.Triangles[i]);
                 });
                 //DumbPixelFilter();
                 WritePixelsToBitmap();

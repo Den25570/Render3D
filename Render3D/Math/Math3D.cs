@@ -359,5 +359,30 @@ namespace Render3D.Math
             var W3 = 1 - W1 - W2;
             return new Vector3(W1, W2, W3);
         }
+
+        public static Matrix4x4 GetTriangleTBNMatrix(Triangle tri, Vector3 normal)
+        {
+
+            Vector3 edge1 = (tri.Points[1] - tri.Points[0]).ToVector3();
+            Vector3 edge2 = (tri.Points[2] - tri.Points[0]).ToVector3();
+            Vector2 deltaUV1 = (tri.TextureCoordinates[1] - tri.TextureCoordinates[0]);
+            Vector2 deltaUV2 = (tri.TextureCoordinates[2] - tri.TextureCoordinates[0]);
+
+            float f = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV2.X * deltaUV1.Y);
+            var tangent = Vector3.Normalize(new Vector3(
+                f * (deltaUV2.Y * edge1.X - deltaUV1.Y * edge2.X),
+                f * (deltaUV2.Y * edge1.Y - deltaUV1.Y * edge2.Y),
+                f * (deltaUV2.Y * edge1.Z - deltaUV1.Y * edge2.Z)));
+            var biTangent = Vector3.Normalize(new Vector3(
+                f * (-deltaUV2.X * edge1.X + deltaUV1.X * edge2.X),
+                f * (-deltaUV2.X * edge1.Y + deltaUV1.X * edge2.Y),
+                f * (-deltaUV2.X * edge1.Z + deltaUV1.X * edge2.Z)));
+
+            return new Matrix4x4(
+                tangent.X, tangent.Y, tangent.Z, 0,
+                biTangent.X, biTangent.Y, biTangent.Z, 0,
+                normal.X, normal.Y, normal.Z, 0,
+                0,0,0,1);
+        }
     }
 }

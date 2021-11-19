@@ -46,7 +46,7 @@ namespace Render3D
 
             scene = new Scene()
             {
-                Lights = new Vector3[] { dataContext.lightPosition },
+                Lights = new Vector4[] { dataContext.lightPosition },
                 LightsColors = new Vector3[] { Vector3.One },
                 MainCamera = dataContext.Camera,
                 BackgroundLightIntensity = 0.1f,
@@ -71,8 +71,7 @@ namespace Render3D
             if (model != null)
             {
                 //
-                var transformedModel = new Model(model);
-                var transformedScene = new Scene(scene);
+                var viewModel = new Model(model);
                 var modelMatrix = Math3D.GetTransformationMatrix(
                     new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F),
                     new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation),
@@ -82,20 +81,27 @@ namespace Render3D
                 var viewportMatrix = Math3D.GetViewportMatrix((float)main_canvas.ActualWidth, (float)main_canvas.ActualHeight, 0, 0);
 
                 // Transformations
-                transformedModel.TransformModel(modelMatrix, true); // Model -> World  
-                transformedModel.RemoveHiddenFaces(dataContext.Camera.Position); // Remove hidden faces
-                transformedModel.TransformModel(viewMatrix, true); // World -> View
-                transformedScene.TransformLights(viewMatrix); // Scene lights -> View
-                transformedModel.CalculateColor(scene); // Model colors
-                transformedModel.ClipTriangles(new Vector3(0, 0, dataContext.Camera.ZNear), new Vector3(0, 0, 1)); // view clip Z near
-                transformedModel.TransformModel(projectionMatrix * viewportMatrix); // 3D -> 2D projection | 2D projection -> viewport projection
-                transformedModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitY); // viewport clip Y
-                transformedModel.ClipTriangles(new Vector3(0, (float)main_canvas.ActualHeight - 1, 0), -Vector3.UnitY); // viewport clip -Y
-                transformedModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitX); // viewport clip X
-                transformedModel.ClipTriangles(new Vector3((float)main_canvas.ActualWidth - 1, 0, 0), -Vector3.UnitX); // viewport clip -X
+                viewModel.TransformModel(modelMatrix, true); // Model -> World  
+                viewModel.RemoveHiddenFaces(dataContext.Camera.Position); // Remove hidden faces
+                viewModel.CalculateColor(scene); // Model colors
+                viewModel.TransformModel(viewMatrix); // World -> View
+                viewModel.ClipTriangles(new Vector3(0, 0, dataContext.Camera.ZNear), new Vector3(0, 0, 1)); // view clip Z near
+                viewModel.TransformModel(projectionMatrix * viewportMatrix); // 3D -> 2D projection | 2D projection -> viewport projection
+                viewModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitY); // viewport clip Y
+                viewModel.ClipTriangles(new Vector3(0, (float)main_canvas.ActualHeight - 1, 0), -Vector3.UnitY); // viewport clip -Y
+                viewModel.ClipTriangles(new Vector3(0, 0, 0), Vector3.UnitX); // viewport clip X
+                viewModel.ClipTriangles(new Vector3((float)main_canvas.ActualWidth - 1, 0, 0), -Vector3.UnitX); // viewport clip -X
+
+                Matrix4x4.Invert(viewMatrix, out var invView);
+                Matrix4x4.Invert(projectionMatrix, out var invProj);
+                Matrix4x4.Invert(viewportMatrix, out var invViewport);
+                var worldModel = new Model(viewModel);
+                worldModel.TransformModel(invViewport);
+                worldModel.TransformModel(invProj);
+                worldModel.TransformModel(invView);
 
                 //Render
-                _renderer.RenderModel(transformedModel, modelMatrix * viewMatrix, projectionMatrix * viewportMatrix, scene);
+                _renderer.RenderModel(viewModel, worldModel, scene);
             }
             stopwatch.Stop();
             dataContext.FPS = stopwatch.ElapsedMilliseconds;

@@ -15,6 +15,6 @@ namespace Render3D.Render
         public bool HasBitmap { get;}
         public void CreateBitmap(Canvas canvas, int width, int height);
 
-        void RenderModel(Model model, Matrix4x4 modelToWorld, Matrix4x4 worldToPerspective, Scene world);
+        void RenderModel(Model viewModel, Model worldModel, Scene scene);
     }
 }

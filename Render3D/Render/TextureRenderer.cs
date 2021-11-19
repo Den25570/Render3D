@@ -47,7 +47,7 @@ namespace Render3D.Render
             canvas.Children.Add(image);
         }
 
-        public void RenderModel(Model model, Matrix4x4 modelToWorld, Matrix4x4 worldToPerspective, Scene scene)
+        public void RenderModel(Model viewModel, Model worldModel, Scene scene)
         {
             try
             {
@@ -56,15 +56,10 @@ namespace Render3D.Render
                 Array.Fill(_pixelBuffer, 0);
                 _bitmap.Clear(Color.FromRgb(0, 0, 0));
 
-                //Logic
-                var worldModel = new Model(model);
-                Matrix4x4.Invert(worldToPerspective, out var invWorldToPerspective);
-                worldModel.TransformModel(invWorldToPerspective);
-
-                Parallel.For(0, model.Triangles.Length, (i) =>
+                Parallel.For(0, viewModel.Triangles.Length, (i) =>
                 {
                     //Draw triangle
-                    DrawTriangle(model.Triangles[i], worldModel.Triangles[i], scene, modelToWorld);
+                    DrawTriangle(viewModel.Triangles[i], worldModel.Triangles[i], scene);
                 });
                 //DumbPixelFilter();
                 WritePixelsToBitmap();
@@ -78,7 +73,7 @@ namespace Render3D.Render
 
         }
 
-        private void DrawTriangle(Triangle triangle, Triangle triangle3D, Scene scene, Matrix4x4 modelToWorld)
+        private void DrawTriangle(Triangle triangle, Triangle triangle3D, Scene scene)
         {
             triangle.Points = new Vector4[]
             {
@@ -102,27 +97,6 @@ namespace Render3D.Render
                 var gotLock = false;
                 try
                 {
-
-                    /*varying vec2 vN;
-
-                        void main() {
-
-                        vec4 p = vec4( position, 1. );
-
-                        vec3 e = normalize( vec😔 modelViewMatrix * p ) );
-                        vec3 n = normalize( normalMatrix * normal );
-
-                        vec3 r = reflect( e, n );
-                        float m = 2. * sqrt(
-                        pow( r.x, 2. ) +
-                        pow( r.y, 2. ) +
-                        pow( r.z + 1., 2. )
-                        );
-                        vN = r.xy / m + .5;
-
-                        gl_Position = projectionMatrix * modelViewMatrix * p;
-
-}*/
                     _zBufferSpinlock[zIndex].Enter(ref gotLock);
                     if (zValue < _zBuffer[zIndex])
                     {
@@ -130,18 +104,29 @@ namespace Render3D.Render
                         coord = Vector2.Clamp(coord, Vector2.Zero, Vector2.One);
 
                         var pos = (barycenter.X * triangle3D.Points[pi[0]] + barycenter.Y * triangle3D.Points[pi[1]] + barycenter.Z * triangle3D.Points[pi[2]]).ToVector3();
-                        var normal = (barycenter.X * triangle.Normals[pi[0]] + barycenter.Y * triangle.Normals[pi[1]] + barycenter.Z * triangle.Normals[pi[2]]);
-                        //if (triangle.Material.NormalsMap != null) normal = Vector3.TransformNormal(triangle.Material.GetNormal(coord.X, 1 - coord.Y).Value, modelToWorld);
+                        
                         var ambientColor = triangle.Material.GetAmbientColor(coord.X, 1 - coord.Y);
                         var diffuseColor = triangle.Material.GetDiffuseColor(coord.X, 1 - coord.Y);
                         var specularColor = triangle.Material.GetSpecularColor(coord.X, 1 - coord.Y);
                         var specularHl = triangle.Material.GetSpecularHighlight(coord.X, 1 - coord.Y);
 
-                        var color = (barycenter.X * triangle.Colors[pi[0]] + barycenter.Y * triangle.Colors[pi[1]] + barycenter.Z * triangle.Colors[pi[2]]) * 0.4f;
+                        // normal mapping
+                        Vector3 normal = Vector3.Normalize(barycenter.X * triangle.Normals[pi[0]] + barycenter.Y * triangle.Normals[pi[1]] + barycenter.Z * triangle.Normals[pi[2]]);
+                        if (triangle.Material.NormalsMap != null)
+                        {
+                            var tbn = Math3D.GetTriangleTBNMatrix(triangle, normal);
+                            normal = triangle.Material.GetNormal(coord.X, 1 - coord.Y).Value;
+                            normal = Vector3.Normalize(Vector3.Transform(normal, tbn));
+                        }
+                        
+
+                        // Per pixel light
+                        var color = Vector3.Zero;
                         for (int li = 0; li < scene.Lights.Length; li++)
                         {
-                            var l = Vector3.Normalize(scene.Lights[li] - pos);
-                            var e = Vector3.Normalize(-pos);
+                            
+                            var l = Vector3.Normalize(scene.Lights[li].ToVector3() - pos);
+                            var e = Vector3.Normalize(scene.MainCamera.Position - pos);
                             var r = Vector3.Normalize(-Vector3.Reflect(l, normal));
                             Vector3 Iamb = ambientColor * scene.LightsColors[li] * scene.BackgroundLightIntensity;
                             Vector3 Idiff = diffuseColor * scene.LightsColors[li] * MathF.Max(Vector3.Dot(normal, l), 0.0f);
@@ -149,22 +134,19 @@ namespace Render3D.Render
                             Vector3 Ispec = specularColor * scene.LightsColors[li] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), specularHl);
                             Ispec = Vector3.Clamp(Ispec, Vector3.Zero, Vector3.One);
 
-                            color += (Iamb + Idiff + Ispec) * 0.6f;
+                            color += (Iamb + Idiff + Ispec);
                         }
-                        //Reflection
+                        // Per pixel Reflection
                         if (triangle.Material.ReflectionMap != null)
                         {
-                            var r = Vector3.Normalize(Vector3.Reflect(Vector3.Normalize(pos), Vector3.Normalize(normal)));
-                            float m = 2.0f * System.MathF.Sqrt(
-                                System.MathF.Pow(r.X, 2.0f ) +
-                                System.MathF.Pow(r.Y, 2.0f ) +
-                                System.MathF.Pow(r.Z + 1.0f, 2.0f )
-                            );
+                            var e = Vector3.Normalize(scene.MainCamera.Position - pos);
+                            var r = Vector3.Reflect(e, normal);
+                            float m = 2.0f * MathF.Sqrt(r.X * r.X + r.Y * r.Y + (r.Z + 1.0f) * (r.Z + 1.0f));
                             var vN = new Vector2((r.X / m) + 0.5f, (r.Y / m) + 0.5f);
-                            color += 0.4f * (triangle.Material.GetReflection(vN.X, 1- vN.Y) ?? Vector3.Zero);
+                            color = color * 0.8f + (triangle.Material.GetReflection(vN.X, vN.Y) ?? Vector3.Zero) * 0.3f;
                         }
 
-                        _pixelBuffer[zIndex] = Vector3.Normalize(Vector3.Reflect(Vector3.Normalize(pos), Vector3.Normalize(normal))).ToRGB();
+                        _pixelBuffer[zIndex] = color.ToRGB();
                         _zBuffer[zIndex] = zValue;
                     }
                 }

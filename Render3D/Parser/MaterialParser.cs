@@ -97,7 +97,7 @@ namespace Render3D.Parser
                                     break;
                                 case "map_Bump":
                                     bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
-                                    task = new Task(() => { material.NormalsMap = material.ImageToMap(bmp); });
+                                    task = new Task(() => { material.NormalsMap = material.ImageToNormalsMap(bmp); });
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
