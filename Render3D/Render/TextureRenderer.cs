@@ -116,7 +116,7 @@ namespace Render3D.Render
                         var specularColor = triangle.Material.GetSpecularColor(coord.X, 1 - coord.Y);
                         var specularHl = triangle.Material.GetSpecularHighlight(coord.X, 1 - coord.Y);
 
-                        var color = Vector3.Zero;
+                        var color = (barycenter.X * triangle.Colors[pi[0]] + barycenter.Y * triangle.Colors[pi[1]] + barycenter.Z * triangle.Colors[pi[2]]) * 0.4f;
                         for (int li = 0; li < scene.Lights.Length; li++)
                         {
                             var l = Vector3.Normalize(scene.Lights[li] - pos);
@@ -131,7 +131,7 @@ namespace Render3D.Render
                             Vector3 Ispec = specularColor * scene.LightsColors[li] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), specularHl);
                             Ispec = Vector3.Clamp(Ispec, Vector3.Zero, Vector3.One);
 
-                            color += Iamb + Idiff + Ispec;
+                            color += (Iamb + Idiff + Ispec) * 0.6f;
                         }
 
                         _pixelBuffer[zIndex] = color.ToRGB();

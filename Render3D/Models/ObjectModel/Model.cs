@@ -37,27 +37,25 @@ namespace Render3D.Models
             }
         }
 
-        // TODO Add lights color
-        // TODO Add material/texture
-        public void CalculateColor(Scene world)
+        public void CalculateColor(Scene scene)
         {
             Parallel.For(0, Triangles.Length, (i) =>
             {
                 for(int j = 0; j < Triangles[i].Points.Length; j++)
                 {
                     var result = new Vector3();
-                    for (int li = 0; li < world.Lights.Length; li++)
+                    for (int li = 0; li < scene.Lights.Length; li++)
                     {
-                        var l = Vector3.Normalize(world.Lights[li] - Triangles[i].Points[j].ToVector3());
+                        var l = Vector3.Normalize(scene.Lights[li] - Triangles[i].Points[j].ToVector3());
                         var e = Vector3.Normalize(-Triangles[i].Points[j].ToVector3());
                         var r = Vector3.Normalize(-Vector3.Reflect(l, Triangles[i].Normals[j]));
 
-                        Vector3 Iamb = Triangles[i].Colors[j] * world.BackgroundLightIntensity;
+                        Vector3 Iamb = scene.LightsColors[li] * scene.BackgroundLightIntensity;
 
-                        Vector3 Idiff = Triangles[i].Colors[j] * MathF.Max(Vector3.Dot(Triangles[i].Normals[j], l), 0.0f);
+                        Vector3 Idiff = scene.LightsColors[li] * MathF.Max(Vector3.Dot(Triangles[i].Normals[j], l), 0.0f);
                         Idiff = Vector3.Clamp(Idiff, Vector3.Zero, Vector3.One);
 
-                        Vector3 Ispec = world.LightsColors[li] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), 5);
+                        Vector3 Ispec = scene.LightsColors[li] * MathF.Pow(MathF.Max(Vector3.Dot(r, e), 0.0f), 5);
                         Ispec = Vector3.Clamp(Ispec, Vector3.Zero, Vector3.One);
 
                         result += Iamb + Idiff + Ispec;
