@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,7 +25,10 @@ namespace Render3D.Render
         float[] _zBuffer;
         private int _width;
         private int _height;
+        private int _backBufferStride;
+        private IntPtr _pBackBuffer;
 
+        public float[] ZBuffer { get => _zBuffer; }
         public bool HasBitmap { get => _bitmap != null; }
 
         public void CreateBitmap(Canvas canvas, int width, int height)
@@ -33,6 +37,8 @@ namespace Render3D.Render
             _height = height;
             _zBuffer = new float[height * width];
             _bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
+            _backBufferStride = _bitmap.BackBufferStride;
+            _pBackBuffer = _bitmap.BackBuffer;
 
             var image = new System.Windows.Controls.Image();
             image.Source = _bitmap;
@@ -48,12 +54,13 @@ namespace Render3D.Render
                 Array.Fill(_zBuffer, float.MaxValue);
                 _bitmap.Clear(System.Windows.Media.Color.FromRgb(0, 0, 0));
 
-                foreach (var triangle in viewModel.Triangles)
+                Parallel.For(0, viewModel.Triangles.Length, (i) =>
                 {
+                    var triangle = viewModel.Triangles[i];
                     DrawLine((int)triangle.Points[0].X, (int)triangle.Points[0].Y, (int)triangle.Points[1].X, (int)triangle.Points[1].Y, 0x00FF00);
                     DrawLine((int)triangle.Points[1].X, (int)triangle.Points[1].Y, (int)triangle.Points[2].X, (int)triangle.Points[2].Y, 0x00FF00);
                     DrawLine((int)triangle.Points[2].X, (int)triangle.Points[2].Y, (int)triangle.Points[0].X, (int)triangle.Points[0].Y, 0x00FF00);
-                }
+                });
                 _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             }
             finally
@@ -82,7 +89,7 @@ namespace Render3D.Render
             int numerator = longest >> 1;
             for (int i = 0; i <= longest; i++)
             {
-                if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight) DrawPixel(x, y, color);
+                if (x >= 0 && y >= 0 && x < _width && y < _height) DrawPixel(x, y, color);
                 numerator += shortest;
                 if (!(numerator < longest))
                 {
@@ -102,8 +109,8 @@ namespace Render3D.Render
         {
             unsafe
             {
-                IntPtr pBackBuffer = _bitmap.BackBuffer;
-                pBackBuffer += y * _bitmap.BackBufferStride;
+                IntPtr pBackBuffer = _pBackBuffer;
+                pBackBuffer += y * _backBufferStride;
                 pBackBuffer += x * 4;
                 *((int*)pBackBuffer) = color;
             }

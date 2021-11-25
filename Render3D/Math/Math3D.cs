@@ -283,7 +283,7 @@ namespace Render3D.Math
                     triangle.Colors[insidePoints[0]] + t1 * (triangle.Colors[outsidePoints[0]] - triangle.Colors[insidePoints[0]]),
                     triangle.Colors[insidePoints[0]] + t2 * (triangle.Colors[outsidePoints[1]] - triangle.Colors[insidePoints[0]]),
                 };
-                newTriangle.TextureCoordinates = new Vector2[]{
+                newTriangle.TextureCoordinates = new Vector3[]{
                     triangle.TextureCoordinates[insidePoints[0]],
                     triangle.TextureCoordinates[insidePoints[0]] + t1 * (triangle.TextureCoordinates[outsidePoints[0]] - triangle.TextureCoordinates[insidePoints[0]]),
                     triangle.TextureCoordinates[insidePoints[0]] + t2 * (triangle.TextureCoordinates[outsidePoints[1]] - triangle.TextureCoordinates[insidePoints[0]]),
@@ -312,7 +312,7 @@ namespace Render3D.Math
                     triangle.Normals[insidePoints[1]],
                     triangle.Normals[insidePoints[0]] + t * (triangle.Normals[outsidePoints[0]] - triangle.Normals[insidePoints[0]]),
                 };
-                newTriangle1.TextureCoordinates = new Vector2[]{
+                newTriangle1.TextureCoordinates = new Vector3[]{
                     triangle.TextureCoordinates[insidePoints[0]],
                     triangle.TextureCoordinates[insidePoints[1]],
                     triangle.TextureCoordinates[insidePoints[0]] + t * (triangle.TextureCoordinates[outsidePoints[0]] - triangle.TextureCoordinates[insidePoints[0]]),
@@ -333,7 +333,7 @@ namespace Render3D.Math
                     newTriangle1.Colors[2],
                     triangle.Colors[insidePoints[1]] + t * (triangle.Colors[outsidePoints[0]] - triangle.Colors[insidePoints[1]]),
                 };
-                newTriangle2.TextureCoordinates = new Vector2[]{
+                newTriangle2.TextureCoordinates = new Vector3[]{
                     triangle.TextureCoordinates[insidePoints[1]],
                     newTriangle1.TextureCoordinates[2],
                     triangle.TextureCoordinates[insidePoints[1]] + t * (triangle.TextureCoordinates[outsidePoints[0]] - triangle.TextureCoordinates[insidePoints[1]]),
@@ -365,8 +365,8 @@ namespace Render3D.Math
 
             Vector3 edge1 = (tri.Points[1] - tri.Points[0]).ToVector3();
             Vector3 edge2 = (tri.Points[2] - tri.Points[0]).ToVector3();
-            Vector2 deltaUV1 = (tri.TextureCoordinates[1] - tri.TextureCoordinates[0]);
-            Vector2 deltaUV2 = (tri.TextureCoordinates[2] - tri.TextureCoordinates[0]);
+            Vector3 deltaUV1 = (tri.TextureCoordinates[1] - tri.TextureCoordinates[0]);
+            Vector3 deltaUV2 = (tri.TextureCoordinates[2] - tri.TextureCoordinates[0]);
 
             float f = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV2.X * deltaUV1.Y);
             var tangent = Vector3.Normalize(new Vector3(

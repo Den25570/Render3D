@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,7 +25,11 @@ namespace Render3D.Render
         float[] _zBuffer;
         private int _width;
         private int _height;
+        private int _backBufferStride;
+        private IntPtr _pBackBuffer;
+        private SpinLock[] _zBufferSpinlock;
 
+        public float[] ZBuffer { get => _zBuffer; }
         public bool HasBitmap { get => _bitmap != null; }
 
         public void CreateBitmap(Canvas canvas, int width, int height)
@@ -33,6 +38,9 @@ namespace Render3D.Render
             _height = height;
             _zBuffer = new float[height * width];
             _bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
+            _zBufferSpinlock = new SpinLock[height * width];
+            _backBufferStride = _bitmap.BackBufferStride;
+            _pBackBuffer = _bitmap.BackBuffer;
 
             var image = new System.Windows.Controls.Image();
             image.Source = _bitmap;
@@ -48,8 +56,9 @@ namespace Render3D.Render
                 Array.Fill(_zBuffer, float.MaxValue);
                 _bitmap.Clear(System.Windows.Media.Color.FromRgb(0, 0, 0));
 
-                foreach (var triangle in viewModel.Triangles)
+                Parallel.For(0, viewModel.Triangles.Length, (i) =>
                 {
+                    var triangle = viewModel.Triangles[i];
                     //Draw triangle
                     var n = (triangle.Normals[0] + triangle.Normals[1] + triangle.Normals[2]) / 3;
                     var v = (triangle.Points[0] + triangle.Points[1] + triangle.Points[2]) / 3;
@@ -61,7 +70,7 @@ namespace Render3D.Render
 
                     var color = (int)(0xFF * dt) * 0x100 * 0x100 + (int)(0xFF * dt) * 0x100 + (int)(0xFF * dt);
                     DrawTriangle(triangle.Points[0], triangle.Points[1], triangle.Points[2], color);
-                }
+                });
                 _bitmap.AddDirtyRect(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
             }
             finally
@@ -126,13 +135,22 @@ namespace Render3D.Render
                 // точками
                 for (int x = (int)MathF.Ceiling(wx1); x <= (int)MathF.Ceiling(wx2); x++)
                 {
-                    if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
+                    if (x >= 0 && y >= 0 && x < _width && y < _height)
                     {
                         var z = Math3D.InterpolateZ(v1, v2, v3, x, y) * 100;
-                        if (z < _zBuffer[x * _height + y])
+                        var gotLock = false;
+                        try
                         {
-                            DrawPixel(x, y, color);
-                            _zBuffer[x * _height + y] = z;
+                            _zBufferSpinlock[x * _height + y].Enter(ref gotLock);
+                            if (z < _zBuffer[x * _height + y])
+                            {
+                                DrawPixel(x, y, color);
+                                _zBuffer[x * _height + y] = z;
+                            }
+                        }
+                        finally
+                        {
+                            if (gotLock) _zBufferSpinlock[x * _height + y].Exit();
                         }
                     }
                 }
@@ -161,13 +179,22 @@ namespace Render3D.Render
                 // точками
                 for (int x = (int)MathF.Ceiling(wx1); x <= (int)MathF.Ceiling(wx2); x++)
                 {
-                    if (x >= 0 && y >= 0 && x < _bitmap.PixelWidth && y < _bitmap.PixelHeight)
+                    if (x >= 0 && y >= 0 && x < _width && y < _height)
                     {
                         var z = Math3D.InterpolateZ(v1, v2, v3, x, y) * 100;
-                        if (z < _zBuffer[x * _height + y])
+                        var gotLock = false;
+                        try
                         {
-                            DrawPixel(x, y, color);
-                            _zBuffer[x * _height + y] = z;
+                            _zBufferSpinlock[x * _height + y].Enter(ref gotLock);
+                            if (z < _zBuffer[x * _height + y])
+                            {
+                                DrawPixel(x, y, color);
+                                _zBuffer[x * _height + y] = z;
+                            }
+                        }
+                        finally
+                        {
+                            if (gotLock) _zBufferSpinlock[x * _height + y].Exit();
                         }
                     }
                 }
@@ -180,9 +207,8 @@ namespace Render3D.Render
         {
             unsafe
             {
-                IntPtr pBackBuffer = _bitmap.BackBuffer;
-                pBackBuffer += y * _bitmap.BackBufferStride;
-                pBackBuffer += x * 4;
+                IntPtr pBackBuffer = _pBackBuffer;
+                pBackBuffer += y * _backBufferStride + x * 4;
                 *((int*)pBackBuffer) = color;
             }
         }

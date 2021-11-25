@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Render3D.Utils;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -13,9 +14,9 @@ namespace Render3D.Models.Texture
         public string Name { get; set; }
 
         // Material color & illumination
-        public Vector3 AmbientColor { get; set; }
-        public Vector3 DiffuseColor { get; set; }
-        public Vector3 SpecularColor { get; set; }
+        public Vector3 AmbientColor { get; set; } = Vector3.One;
+        public Vector3 DiffuseColor { get; set; } = Vector3.One;
+        public Vector3 SpecularColor { get; set; } = Vector3.One;
 
         /*"Ns "A high exponent 
         results in a tight, concentrated highlight.  Ns values normally range 
@@ -53,38 +54,41 @@ namespace Render3D.Models.Texture
         public float OpticalDensity { get; set; }
 
         // texture maps
-        public Vector3[,] AmbientColorMap { get; set; }
-        public Vector3[,] DiffuseColorMap { get; set; }
-        public Vector3[,] SpecularColorMap { get; set; }
-        public Vector3[,] SpecularHighlightsMap { get; set; }
-        public Vector3[,] DissolveMap { get; set; }
-        public Vector3[,] NormalsMap { get; set; }
-        public Vector3[,] ReflectionMap { get; set; }
+        public int[,] AmbientColorMap { get; set; }
+        public int[,] DiffuseColorMap { get; set; }
+        public int[,] SpecularColorMap { get; set; }
+        public float[,] SpecularHighlightsMap { get; set; }
+        public float[,] DissolveMap { get; set; }
+        public int[,] NormalsMap { get; set; }
+        public int[,] ReflectionMap { get; set; }
 
-        // reflection map
-        // None yet
-
-        public Vector3[,] ImageToNormalsMap(Bitmap img)
+        public int[,] ImageToMap(Bitmap img)
         {
-            var map = new Vector3[img.Width, img.Height];
-            for (int i = 0; i < img.Width; i++)
-                for (int j = 0; j < img.Height; j++)
-                {
-                    var pixel = img.GetPixel(i, j);
-                    map[i, j] = new Vector3(pixel.R / 255.0f, pixel.G / 255.0f, pixel.B / 255.0f) * 2 - Vector3.One;
-                }
+            var map = new int[img.Width, img.Height];
+            using (var snoop = new BmpPixelSnoop(img))
+            {
+                for (int i = 0; i < snoop.Width; i++)
+                    for (int j = 0; j < snoop.Height; j++)
+                    {
+                        var pixel = snoop.GetPixel(i, j);
+                        map[i, j] = pixel.ToArgb();
+                    }
+            }
             return map;
         }
 
-        public Vector3[,] ImageToMap(Bitmap img)
+        public float[,] ImageToMapFloat(Bitmap img)
         {
-            var map = new Vector3[img.Width,img.Height];
-            for (int i = 0; i < img.Width; i++)
-                for (int j = 0; j < img.Height; j++)
-                {
-                    var pixel = img.GetPixel(i, j);
-                    map[i, j] = new Vector3(pixel.R / 255.0f, pixel.G / 255.0f, pixel.B / 255.0f);
-                }
+            var map = new float[img.Width, img.Height];
+            using (var snoop = new BmpPixelSnoop(img))
+            {
+                for (int i = 0; i < snoop.Width; i++)
+                    for (int j = 0; j < snoop.Height; j++)
+                    {
+                        var pixel = snoop.GetPixel(i, j);
+                        map[i, j] = pixel.R / 255.0f;
+                    }
+            }
             return map;
         }
 
@@ -93,7 +97,8 @@ namespace Render3D.Models.Texture
             if (AmbientColorMap != null)
             {
                 var mapSize = AmbientColorMap.GetLength(1) - 1;
-                return AmbientColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+                var value = AmbientColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+                return new Vector3(((value >> 16) & 0xFF) / 255.0f, ((value >> 8) & 0xFF) / 255.0f, (value & 0xFF) / 255.0f);
             }
             return AmbientColor;
         }
@@ -103,7 +108,8 @@ namespace Render3D.Models.Texture
             if (DiffuseColorMap != null)
             {
                 var mapSize = DiffuseColorMap.GetLength(1) - 1;
-                return DiffuseColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+                var value = DiffuseColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+                return new Vector3(((value >> 16) & 0xFF) / 255.0f, ((value >> 8) & 0xFF) / 255.0f, (value & 0xFF) / 255.0f);
             }
             return DiffuseColor;
         }
@@ -113,18 +119,19 @@ namespace Render3D.Models.Texture
             if (SpecularColorMap != null)
             {
                 var mapSize = SpecularColorMap.GetLength(1) - 1;
-                return SpecularColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+                var value = SpecularColorMap[(int)(x * mapSize), (int)(y * mapSize)];
+                return new Vector3(((value >> 16) & 0xFF) / 255.0f, ((value >> 8) & 0xFF) / 255.0f, (value & 0xFF) / 255.0f);
             }
             return SpecularColor;
 
         }
 
-        public float GetSpecularHighlight(float x, float y)
+        public float GetSpecularHighlight(float x, float y, float modif)
         {
             if (SpecularHighlightsMap != null)
             {
                 var mapSize = SpecularHighlightsMap.GetLength(1) - 1;
-                return SpecularHighlightsMap[(int)(x * mapSize), (int)(y * mapSize)].X / 255.0f;
+                return SpecularHighlightsMap[(int)(x * mapSize), (int)(y * mapSize)] * SpecularHighlights * modif;
             }
             return SpecularHighlights;
         }
@@ -134,7 +141,8 @@ namespace Render3D.Models.Texture
             if (NormalsMap != null)
             {
                 var mapSize = NormalsMap.GetLength(1) - 1;
-                return NormalsMap[(int)(x * mapSize), (int)(y * mapSize)];
+                var value = NormalsMap[(int)(x * mapSize), (int)(y * mapSize)];
+                return new Vector3((((value >> 16) & 0xFF) / 255.0f) * 2 - 1, (((value >> 8) & 0xFF) / 255.0f) * 2 - 1, ((value & 0xFF) / 255.0f) * 2 - 1); ;
             }
             return null;
         }
@@ -145,9 +153,21 @@ namespace Render3D.Models.Texture
             {
                 var mapSizeX = ReflectionMap.GetLength(0) - 1;
                 var mapSizeY = ReflectionMap.GetLength(1) - 1;
-                return ReflectionMap[(int)(x * mapSizeX), (int)(y * mapSizeY)];
+                var value = ReflectionMap[(int)(x * mapSizeX), (int)(y * mapSizeY)];
+                return new Vector3(((value >> 16) & 0xFF) / 255.0f, ((value >> 8) & 0xFF) / 255.0f, (value & 0xFF) / 255.0f);
             }
             return null;
+        }
+
+        public float GetDissolve(float x, float y)
+        {
+            if (DissolveMap != null)
+            {
+                var mapSizeX = ReflectionMap.GetLength(0) - 1;
+                var mapSizeY = ReflectionMap.GetLength(1) - 1;
+                return DissolveMap[(int)(x * mapSizeX), (int)(y * mapSizeY)] * Dissolve;
+            }
+            return Dissolve;
         }
     }
 }

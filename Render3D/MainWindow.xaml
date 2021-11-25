@@ -32,9 +32,12 @@
                 <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding ZRotation, UpdateSourceTrigger=PropertyChanged}" />
                 <Separator />
                 <TextBlock Text="Scale X,Y,Z"></TextBlock>
-                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding XScale, UpdateSourceTrigger=PropertyChanged}" />
-                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding YScale, UpdateSourceTrigger=PropertyChanged}" />
-                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding ZScale, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding Scale, UpdateSourceTrigger=PropertyChanged}" />
+                <Separator />
+                <TextBlock Text="Light color"></TextBlock>
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding RLightColor, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding GLightColor, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox MinWidth="50" TextChanged="TextBox_ModelTransformChanged" Text="{Binding BLightColor, UpdateSourceTrigger=PropertyChanged}" />
             </MenuItem>
         </Menu>
         <TextBlock Panel.ZIndex="2" Text="{Binding FPS}" Grid.Column="2" Margin="0,1,201,0" Width="200" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"></TextBlock>

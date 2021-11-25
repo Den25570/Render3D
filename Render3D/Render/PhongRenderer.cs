@@ -2,7 +2,6 @@
 using Render3D.Math;
 using Render3D.Models;
 using Render3D.Models.Texture;
-using Render3D.Shaders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +26,7 @@ namespace Render3D.Render
         private int[] _pixelBuffer;
         private int _backBufferStride;
 
+        public float[] ZBuffer { get => _zBuffer; }
         public bool HasBitmap { get => _bitmap != null; }
 
         public void CreateBitmap(Canvas canvas, int width, int height)

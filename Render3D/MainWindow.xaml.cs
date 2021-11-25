@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using Render3D.Extensions;
 using Render3D.Math;
 using Render3D.Models;
 using Render3D.Parser;
@@ -24,11 +25,13 @@ namespace Render3D
         private IParser _materialParser;
         private Dictionary<RenderMode, IRenderer> _renderers;
         private IRenderer _renderer;
+        private ZBufferRenderer _zBufferRenderer;
 
         // Data
         private Model model;
         private Scene scene;
         private ApplicationViewModel dataContext;
+        private int shadowsResolution = 2048;
 
         // Control params
         private Point? initialPosition;
@@ -47,19 +50,22 @@ namespace Render3D
             scene = new Scene()
             {
                 Lights = new Vector4[] { dataContext.lightPosition },
-                LightsColors = new Vector3[] { Vector3.One },
+                LightsColors = new Vector3[] { dataContext.LightColor },
                 MainCamera = dataContext.Camera,
                 BackgroundLightIntensity = 0.1f,
             };
 
             _renderers = new Dictionary<RenderMode, IRenderer>()
             {
+                {RenderMode.TextureShadow, new TextureShadowRenderer() },
                 {RenderMode.Texture, new TextureRenderer() },
                 {RenderMode.Phong, new PhongRenderer() },
                 {RenderMode.SimpleTriangle, new FlatRenderer() },
                 {RenderMode.Wireframe, new WireframeRenderer() },
             };
             _renderer = _renderers[dataContext.RenderMode];
+            _zBufferRenderer = new ZBufferRenderer();
+            _zBufferRenderer.CreateBitmap(null, shadowsResolution, shadowsResolution);
 
             InitializeComponent();
         }
@@ -70,10 +76,16 @@ namespace Render3D
             
             if (model != null)
             {
+                if (dataContext.IsWorldChanged)
+                {
+                    ComputeShadows();
+                    dataContext.IsWorldChanged = false;
+                }
+
                 // Matrices
                 var viewModel = new Model(model);
                 var modelMatrix = Math3D.GetTransformationMatrix(
-                    new Vector3(dataContext.XScale / 100F, dataContext.YScale / 100F, dataContext.ZScale / 100F),
+                    new Vector3(dataContext.Scale / 100F),
                     new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation),
                     new Vector3(dataContext.XTranslation, dataContext.YTranslation, dataContext.ZTranslation));
                 var viewMatrix = Math3D.GetViewMatrix(dataContext.Camera.Position, dataContext.Camera.Rotation);
@@ -83,7 +95,7 @@ namespace Render3D
                 // Transformations
                 viewModel.TransformModel(modelMatrix, true); // Model -> World  
                 viewModel.RemoveHiddenFaces(dataContext.Camera.Position); // Remove hidden faces
-                viewModel.CalculateColor(scene); // Model colors
+                if (dataContext.RenderMode == RenderMode.Phong) viewModel.CalculateColor(scene); // Model colors
                 viewModel.TransformModel(viewMatrix); // World -> View
                 viewModel.ClipTriangles(new Vector3(0, 0, dataContext.Camera.ZNear), new Vector3(0, 0, 1)); // view clip Z near
                 viewModel.TransformModel(projectionMatrix * viewportMatrix); // 3D -> 2D projection | 2D projection -> viewport projection
@@ -99,17 +111,40 @@ namespace Render3D
                 var worldModel = new Model(viewModel);
                 worldModel.TransformModel(invViewport * invProj * invView);
 
-                // Shadow casting
-                for(int i = 0; i < scene.Lights.Length; i++)
-                {
-                    var lightSpaceMatrix = Math3D.GetLightViewMatrix(scene.Lights[i].ToVector3(), Vector3.Zero, dataContext.Camera.ZNear, dataContext.Camera.ZFar);
-                }
-
                 // Render
                 _renderer.RenderModel(viewModel, worldModel, scene);
             }
             stopwatch.Stop();
             dataContext.FPS = stopwatch.ElapsedMilliseconds;
+        }
+
+        private void ComputeShadows()
+        {
+            // Matrices
+            var lightModel = new Model(model);
+            var modelMatrix = Math3D.GetTransformationMatrix(
+                new Vector3(dataContext.Scale / 100F),
+                new Vector3((MathF.PI / 180) * dataContext.XRotation, (MathF.PI / 180) * dataContext.YRotation, (MathF.PI / 180) * dataContext.ZRotation),
+                new Vector3(dataContext.XTranslation, dataContext.YTranslation, dataContext.ZTranslation));
+            lightModel.TransformModel(modelMatrix, true); // Model -> World  
+
+            // Shadow casting
+            scene.shadowBuffers = new List<Map<float>>();
+            scene.lightViewProjMatrixes = new List<Matrix4x4>();
+            for (int i = 0; i < scene.Lights.Length; i++)
+            {
+                var lightSpaceMatrix = Math3D.GetLightViewMatrix(
+                    scene.Lights[i].ToVector3(),
+                    new Vector3(dataContext.XTranslation, dataContext.YTranslation, dataContext.ZTranslation),
+                    dataContext.Camera.ZNear,
+                    dataContext.Camera.ZFar);
+                var lightSpaceModel = new Model(lightModel);
+                var shadowMapViewportMatrix = Math3D.GetViewportMatrix((float)shadowsResolution, (float)shadowsResolution, 0, 0);
+                lightSpaceModel.TransformModel(lightSpaceMatrix * shadowMapViewportMatrix);
+                _zBufferRenderer.RenderModel(lightSpaceModel, lightSpaceModel, scene);
+                scene.shadowBuffers.Add(new Map<float>() { A = _zBufferRenderer.ZBuffer, Width = shadowsResolution, Height = shadowsResolution });
+                scene.lightViewProjMatrixes.Add(lightSpaceMatrix * shadowMapViewportMatrix);
+            }
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
@@ -126,6 +161,7 @@ namespace Render3D
                 // Preprocess model
                 loadedModel.CalculateNormals();
                 model = new Model(loadedModel);
+                ComputeShadows();
 
                 // Render model
                 RenderModel();
@@ -139,13 +175,14 @@ namespace Render3D
 
         private void TextBox_ModelTransformChanged(object sender, TextChangedEventArgs e)
         {
+            scene.LightsColors = new Vector3[] { dataContext.LightColor };
             RenderModel();
         }
 
         private void main_canvas_KeyDown(object sender, KeyEventArgs e)
         {
             var rot = Quaternion.CreateFromYawPitchRoll(dataContext.Camera.Rotation.X, dataContext.Camera.Rotation.Y, dataContext.Camera.Rotation.Z);
-            Vector3 forward = Vector3.Transform(Vector3.UnitZ, rot) * 0.1f;
+            Vector3 forward = Vector3.Transform(Vector3.UnitZ, rot);
 
             //Move
             if (e.Key == Key.W)
@@ -160,55 +197,57 @@ namespace Render3D
             //Rotate
             if (e.Key == Key.Up)
             {
-                dataContext.Camera.Rotate(new Vector3(0, 0.05f, 0));
+                dataContext.XRotation += 0.05f;
             }
             if (e.Key == Key.Down)
             {
-                dataContext.Camera.Rotate(new Vector3(0, -0.05f, 0));
+                dataContext.XRotation -= 0.05f;
             }
             if (e.Key == Key.Left)
             {
-                dataContext.Camera.Rotate(new Vector3(0.05f, 0, 0));
+                dataContext.YRotation += 0.05f;
             }
             if (e.Key == Key.Right)
             {
-                dataContext.Camera.Rotate(new Vector3(-0.05f, 0, 0));
+                dataContext.YRotation -= 0.05f;
             }
 
             //Scale model
             if (e.Key == Key.Add)
             {
-                dataContext.XScale += 5;
-                dataContext.YScale += 5;
-                dataContext.ZScale += 5;
+                dataContext.Scale += 5;
             }
             if (e.Key == Key.Subtract)
             {
-                dataContext.XScale -= 5;
-                dataContext.YScale -= 5;
-                dataContext.ZScale -= 5;
+                dataContext.Scale -= 5;
             }
 
             // Utils
             if (e.Key == Key.F1)
             {
-                dataContext.RenderMode = RenderMode.Texture;
+                dataContext.RenderMode = RenderMode.TextureShadow;
                 _renderer = _renderers[dataContext.RenderMode];
                 _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
             }
             if (e.Key == Key.F2)
             {
-                dataContext.RenderMode = RenderMode.Phong;
+                dataContext.RenderMode = RenderMode.Texture;
                 _renderer = _renderers[dataContext.RenderMode];
                 _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
             }
             if (e.Key == Key.F3)
             {
-                dataContext.RenderMode = RenderMode.SimpleTriangle;
+                dataContext.RenderMode = RenderMode.Phong;
                 _renderer = _renderers[dataContext.RenderMode];
                 _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
             }
             if (e.Key == Key.F4)
+            {
+                dataContext.RenderMode = RenderMode.SimpleTriangle;
+                _renderer = _renderers[dataContext.RenderMode];
+                _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
+            }
+            if (e.Key == Key.F5)
             {
                 dataContext.RenderMode = RenderMode.Wireframe;
                 _renderer = _renderers[dataContext.RenderMode];

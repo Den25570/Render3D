@@ -17,7 +17,7 @@ namespace Render3D.Models
 
         public Vector3[] Colors;
 
-        public Vector2[] TextureCoordinates;
+        public Vector3[] TextureCoordinates;
 
         public Material Material;
 
@@ -29,7 +29,7 @@ namespace Render3D.Models
             Points = (Vector4[])triangle.Points.Clone();
             Normals = (Vector3[])triangle.Normals.Clone();
             Colors = (Vector3[])triangle.Colors.Clone();
-            TextureCoordinates = (Vector2[])triangle.TextureCoordinates.Clone();
+            TextureCoordinates = (Vector3[])triangle.TextureCoordinates.Clone();
         }
     }
 }

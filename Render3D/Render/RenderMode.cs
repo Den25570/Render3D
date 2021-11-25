@@ -8,6 +8,7 @@ namespace Render3D.Render
 {
     public enum RenderMode
     {
+        TextureShadow,
         Texture,
         Phong,
         SimpleTriangle,

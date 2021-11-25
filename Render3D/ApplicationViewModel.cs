@@ -18,33 +18,32 @@ namespace Render3D
         private float xTranslation;
         private float yTranslation;
         private float zTranslation;
-
-        private float xScale;
-        private float yScale;
-        private float zScale;
-
+        private float scale;
         private float xRotation;
         private float yRotation;
         private float zRotation;
 
+        private Vector3 lightColor;
         public Vector4 lightPosition;
-
         public RenderMode renderMode;
-
         private Camera camera;
 
+        public bool IsWorldChanged { get; set; }
         public float FPS { get { return timePerRender; } set { timePerRender = value; OnPropertyChanged("FPS"); } }
-        public float XTranslation { get { return xTranslation; } set { xTranslation = value; OnPropertyChanged("XTranslation"); } }
-        public float YTranslation { get { return yTranslation; } set { yTranslation = value; OnPropertyChanged("YTranslation"); } }
-        public float ZTranslation { get { return zTranslation; } set { zTranslation = value; OnPropertyChanged("ZTranslation"); } }
+        public float XTranslation { get { return xTranslation; } set { IsWorldChanged = true; xTranslation = value; OnPropertyChanged("XTranslation"); } }
+        public float YTranslation { get { return yTranslation; } set { IsWorldChanged = true; yTranslation = value; OnPropertyChanged("YTranslation"); } }
+        public float ZTranslation { get { return zTranslation; } set { IsWorldChanged = true; zTranslation = value; OnPropertyChanged("ZTranslation"); } }
 
-        public float XScale { get { return xScale; } set { xScale = value; OnPropertyChanged("XScale"); } }
-        public float YScale { get { return yScale; } set { yScale = value; OnPropertyChanged("YScale"); } }
-        public float ZScale { get { return zScale; } set { zScale = value; OnPropertyChanged("ZScale"); } }
+        public float Scale { get { return scale; } set { IsWorldChanged = true; scale = value; OnPropertyChanged("Scale"); } }
 
-        public float XRotation { get { return xRotation; } set { xRotation = value; OnPropertyChanged("XRotation"); } }
-        public float YRotation { get { return yRotation; } set { yRotation = value; OnPropertyChanged("YRotation"); } }
-        public float ZRotation { get { return zRotation; } set { zRotation = value; OnPropertyChanged("ZRotation"); } }
+        public float XRotation { get { return xRotation; } set { IsWorldChanged = true; xRotation = value; OnPropertyChanged("XRotation"); } }
+        public float YRotation { get { return yRotation; } set { IsWorldChanged = true; yRotation = value; OnPropertyChanged("YRotation"); } }
+        public float ZRotation { get { return zRotation; } set { IsWorldChanged = true; zRotation = value; OnPropertyChanged("ZRotation"); } }
+
+        public float RLightColor { get { return lightColor.X * 255; } set { IsWorldChanged = true; lightColor = new Vector3(value / 255, lightColor.Y, lightColor.Z); OnPropertyChanged("RLightColor"); } }
+        public float GLightColor { get { return lightColor.Y * 255; } set { IsWorldChanged = true; lightColor = new Vector3(lightColor.X, value / 255, lightColor.Z); OnPropertyChanged("GLightColor"); } }
+        public float BLightColor { get { return lightColor.Z * 255; } set { IsWorldChanged = true; lightColor = new Vector3(lightColor.X, lightColor.Y, value / 255); OnPropertyChanged("BLightColor"); } }
+        public Vector3 LightColor { get { return lightColor; } set { IsWorldChanged = true; lightColor = value; OnPropertyChanged("BLightColor"); } }
 
         public Camera Camera { get { return camera; } set { camera = value; OnPropertyChanged("Camera"); } }
         public RenderMode RenderMode { get { return renderMode; } set { renderMode = value; OnPropertyChanged("RenderMode"); } }
@@ -57,14 +56,13 @@ namespace Render3D
             ZTranslation = 4;
 
             XRotation = 0;
-            YRotation = 0;
+            YRotation = 180;
             ZRotation = 0;
 
-            XScale = 100;
-            YScale = 100;
-            ZScale = 100;
+            Scale = 100;
 
-            LightPosition = Vector4.UnitY * 10;
+            LightPosition = new Vector4(1, 10, -15, 1);
+            LightColor = Vector3.One;
             RenderMode = RenderMode.Texture;
 
             camera = new Camera()

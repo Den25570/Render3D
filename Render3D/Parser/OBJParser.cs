@@ -61,7 +61,7 @@ namespace Render3D.Parser
                                     X = float.Parse(items[1]),
                                     Y = float.Parse(items[2]),
                                     Z = float.Parse(items[3]),
-                                    W = items.Count >= 5 ? float.Parse(items[4]) : 1.0F,
+                                    W = items.Count == 5 ? float.Parse(items[4]) : 1.0F,
                                 });
                                 break;
                             case "vt":

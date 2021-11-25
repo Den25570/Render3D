@@ -67,43 +67,43 @@ namespace Render3D.Parser
 
                                 case "map_Ka":
                                     var bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
-                                    var task = new Task(() => { material.AmbientColorMap = material.ImageToMap(bmp); });
+                                    var task = new Task(() => { material.AmbientColorMap = material.ImageToMap(bmp); bmp.Dispose(); });
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
                                 case "map_Kd":
                                     bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
-                                    task = new Task(() => { material.DiffuseColorMap = material.ImageToMap(bmp); });
+                                    task = new Task(() => { material.DiffuseColorMap = material.ImageToMap(bmp); bmp.Dispose(); });
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
                                 case "map_Ks":
                                     bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
-                                    task = new Task(() => { material.SpecularColorMap = material.ImageToMap(bmp); });
+                                    task = new Task(() => { material.SpecularColorMap = material.ImageToMap(bmp); bmp.Dispose(); });
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
                                 case "map_d":
                                     bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
-                                    task = new Task(() => { material.DissolveMap = material.ImageToMap(bmp); });
+                                    task = new Task(() => { material.DissolveMap = material.ImageToMapFloat(bmp); bmp.Dispose(); });
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
                                 case "map_Ns":
                                     bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
-                                    task = new Task(() => { material.SpecularHighlightsMap = material.ImageToMap(bmp); });
+                                    task = new Task(() => { material.SpecularHighlightsMap = material.ImageToMapFloat(bmp); bmp.Dispose(); });
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
                                 case "map_Bump":
                                     bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
-                                    task = new Task(() => { material.NormalsMap = material.ImageToNormalsMap(bmp); });
+                                    task = new Task(() => { material.NormalsMap = material.ImageToMap(bmp); bmp.Dispose(); });
                                     task.Start();
                                     TaskList.Add(task);
                                     break;
                                 case "refl":
                                     bmp = new Bitmap($"{Path.GetDirectoryName(path)}\\{items.GetRange(1, items.Count - 1).Aggregate((i, j) => i + " " + j).Replace(',', '.')}");
-                                    task = new Task(() => { var map = material.ImageToMap(bmp);  materials.ForEach(m => m.ReflectionMap = map); });
+                                    task = new Task(() => { material.ReflectionMap = material.ImageToMap(bmp); bmp.Dispose(); });
                                     task.Start();
                                     TaskList.Add(task);
                                     break;

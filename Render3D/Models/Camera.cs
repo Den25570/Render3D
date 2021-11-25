@@ -20,7 +20,7 @@ namespace Render3D.Models
         {
             FOV = MathF.PI / 3;
             ZNear = 0.1f;
-            ZFar = 200f;
+            ZFar = 5f;
             Position = Vector3.UnitZ;
             Rotation = Vector3.Zero;
         }

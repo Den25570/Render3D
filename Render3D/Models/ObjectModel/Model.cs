@@ -46,7 +46,8 @@ namespace Render3D.Models
                     var result = new Vector3();
                     for (int li = 0; li < scene.Lights.Length; li++)
                     {
-                        var l = Vector3.Normalize((scene.Lights[li] - Triangles[i].Points[j]).ToVector3());
+                        var lightPos = scene.Lights[li].ToVector3();
+                        var l = Vector3.Normalize(lightPos - Triangles[i].Points[j].ToVector3());
                         var e = Vector3.Normalize(scene.MainCamera.Position-Triangles[i].Points[j].ToVector3());
                         var r = Vector3.Normalize(-Vector3.Reflect(l, Triangles[i].Normals[j]));
 
@@ -80,13 +81,19 @@ namespace Render3D.Models
                     var n2 = loadedModel.VertexNormals[loadedModel.Faces[i][j].vn - 1];
                     var n3 = loadedModel.VertexNormals[loadedModel.Faces[i][j + 1].vn - 1];
 
-                    var vt1 = loadedModel.Faces[i][0].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][0].vt - 1] : new Vector2();
-                    var vt2 = loadedModel.Faces[i][j].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][j].vt - 1] : new Vector2();
-                    var vt3 = loadedModel.Faces[i][j + 1].vt != 0 ? loadedModel.TextureVertices[loadedModel.Faces[i][j + 1].vt - 1] : new Vector2();
+                    var vt1 = loadedModel.Faces[i][0].vt != 0 ?
+                        new Vector3(loadedModel.TextureVertices[loadedModel.Faces[i][0].vt - 1].X, loadedModel.TextureVertices[loadedModel.Faces[i][0].vt - 1].Y, 1)
+                        : new Vector3();
+                    var vt2 = loadedModel.Faces[i][j].vt != 0 ?
+                        new Vector3(loadedModel.TextureVertices[loadedModel.Faces[i][j].vt - 1].X, loadedModel.TextureVertices[loadedModel.Faces[i][j].vt - 1].Y, 1)
+                        : new Vector3();
+                    var vt3 = loadedModel.Faces[i][j + 1].vt != 0 ?
+                        new Vector3(loadedModel.TextureVertices[loadedModel.Faces[i][j+1].vt - 1].X, loadedModel.TextureVertices[loadedModel.Faces[i][j+1].vt - 1].Y, 1)
+                        : new Vector3();
                     triangles.Add(new Triangle()
                     {
                         Material = loadedModel.Faces[i][j].material,
-                        TextureCoordinates = new Vector2[] { vt1, vt2, vt3 },
+                        TextureCoordinates = new Vector3[] { vt1, vt2, vt3 },
                         Points = new Vector4[3] { v1, v2, v3 },
                         Normals = new Vector3[3] { n1, n2, n3 },
                         Colors = new Vector3[3] { Vector3.UnitZ, Vector3.UnitZ, Vector3.UnitZ }
@@ -103,6 +110,8 @@ namespace Render3D.Models
                 for (int j = 0; j < Triangles[i].Points.Length; j++)
                 {
                     Triangles[i].Points[j] = Vector4.Transform(Triangles[i].Points[j], transform);
+                    Triangles[i].TextureCoordinates[j] /= Triangles[i].Points[j].W;
+                    Triangles[i].TextureCoordinates[j].Z = 1.0f / Triangles[i].Points[j].W;
                     Triangles[i].Points[j] /= Triangles[i].Points[j].W;
                 }
                 if (transformNormals)
