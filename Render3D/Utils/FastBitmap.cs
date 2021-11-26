@@ -63,7 +63,7 @@ namespace Render3D.Utils
         public System.Drawing.Color GetPixel(int x, int y)
         {
             // Better do the 'decent thing' and bounds check x & y
-            if (x < 0 || y < 0 || x >= width || y >= width)
+            if (x < 0 || y < 0 || x >= width || y >= height)
                 throw new ArgumentException("x or y coordinate is out of range");
 
             int r, g, b;

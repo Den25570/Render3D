@@ -362,7 +362,6 @@ namespace Render3D.Math
 
         public static Matrix4x4 GetTriangleTBNMatrix(Triangle tri, Vector3 normal)
         {
-
             Vector3 edge1 = (tri.Points[1] - tri.Points[0]).ToVector3();
             Vector3 edge2 = (tri.Points[2] - tri.Points[0]).ToVector3();
             Vector3 deltaUV1 = (tri.TextureCoordinates[1] - tri.TextureCoordinates[0]);

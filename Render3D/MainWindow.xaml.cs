@@ -35,9 +35,7 @@ namespace Render3D
 
         // Control params
         private Point? initialPosition;
-        public float Speed = 0.5f;
-        public float RotationSpeed = 0.05f;
-        public float MouseSpeed = 0.1f;
+        private RenderOptions renderOptions;
 
         public MainWindow()
         {
@@ -49,16 +47,21 @@ namespace Render3D
 
             scene = new Scene()
             {
-                Lights = new Vector4[] { dataContext.lightPosition },
+                Lights = new Vector4[] { dataContext.LightPosition },
                 LightsColors = new Vector3[] { dataContext.LightColor },
                 MainCamera = dataContext.Camera,
                 BackgroundLightIntensity = 0.1f,
             };
 
+            renderOptions = new RenderOptions()
+            {
+                ShowReflections = dataContext.ShowReflections
+            };
+
             _renderers = new Dictionary<RenderMode, IRenderer>()
             {
-                {RenderMode.TextureShadow, new TextureShadowRenderer() },
-                {RenderMode.Texture, new TextureRenderer() },
+                {RenderMode.PBR, new PBRenderer(renderOptions) },
+                {RenderMode.Texture, new TextureRenderer(renderOptions) },
                 {RenderMode.Phong, new PhongRenderer() },
                 {RenderMode.SimpleTriangle, new FlatRenderer() },
                 {RenderMode.Wireframe, new WireframeRenderer() },
@@ -225,7 +228,7 @@ namespace Render3D
             // Utils
             if (e.Key == Key.F1)
             {
-                dataContext.RenderMode = RenderMode.TextureShadow;
+                dataContext.RenderMode = RenderMode.PBR;
                 _renderer = _renderers[dataContext.RenderMode];
                 _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
             }
@@ -252,6 +255,19 @@ namespace Render3D
                 dataContext.RenderMode = RenderMode.Wireframe;
                 _renderer = _renderers[dataContext.RenderMode];
                 _renderer.CreateBitmap(main_canvas, (int)main_canvas.ActualWidth, (int)main_canvas.ActualHeight);
+            }
+
+            if (e.Key == Key.R)
+            {
+                renderOptions.ShowReflections = !renderOptions.ShowReflections;
+            }
+            if (e.Key == Key.H)
+            {
+                renderOptions.ShowShadows = !renderOptions.ShowShadows;
+            }
+            if (e.Key == Key.N)
+            {
+                renderOptions.NormalsMode = !renderOptions.NormalsMode;
             }
 
             RenderModel();

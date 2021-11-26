@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 
 namespace Render3D.Render
 {
-    unsafe public class TextureShadowRenderer : IRenderer
+    unsafe public class PBRenderer : IRenderer
     {
         private WriteableBitmap _bitmap;
         private float[] _zBuffer;
@@ -25,8 +25,15 @@ namespace Render3D.Render
         private int[] _pixelBuffer;
         private int _backBufferStride;
 
+        private RenderOptions _renderOptions;
+
         public float[] ZBuffer { get => _zBuffer; }
         public bool HasBitmap { get => _bitmap != null; }
+
+        public PBRenderer(RenderOptions renderOptions)
+        {
+            _renderOptions = renderOptions;
+        }
 
         public void CreateBitmap(Canvas canvas, int width, int height)
         {
@@ -118,7 +125,9 @@ namespace Render3D.Render
 
                         var Lo = Vector3.Zero;
                         var v = Vector3.Normalize(scene.MainCamera.Position - pos);
-                        var shadow = 1.0f;
+                        var shadow = 0.0f;
+                        if (_renderOptions.ShowShadows)
+                            shadow = 1.0f;
                         for (int li = 0; li < scene.Lights.Length; li++)
                         {
                             var lightPos = scene.Lights[li].ToVector3();
@@ -163,7 +172,10 @@ namespace Render3D.Render
                         var pow = 1.0f / 1.6f;
                         color = new Vector3(MathF.Pow(color.X, pow), MathF.Pow(color.Y, pow), MathF.Pow(color.Z, pow));
 
-                        _pixelBuffer[zIndex] = color.ToRGB();
+                        if (_renderOptions.NormalsMode)
+                            _pixelBuffer[zIndex] = normal.ToRGB();
+                        else
+                            _pixelBuffer[zIndex] = color.ToRGB();
                         _zBuffer[zIndex] = zValue;
                     }
                 }

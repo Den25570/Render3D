@@ -24,8 +24,11 @@ namespace Render3D
         private float zRotation;
 
         private Vector3 lightColor;
-        public Vector4 lightPosition;
-        public RenderMode renderMode;
+        private Vector4 lightPosition;
+        private RenderMode renderMode;
+        private bool showReflections;
+        private bool showShadows;
+        private bool normalsMode;
         private Camera camera;
 
         public bool IsWorldChanged { get; set; }
@@ -47,6 +50,9 @@ namespace Render3D
 
         public Camera Camera { get { return camera; } set { camera = value; OnPropertyChanged("Camera"); } }
         public RenderMode RenderMode { get { return renderMode; } set { renderMode = value; OnPropertyChanged("RenderMode"); } }
+        public bool ShowReflections { get { return showReflections; } set { showReflections = value; OnPropertyChanged("ShowReflections"); } }
+        public bool ShowShadows { get { return showShadows; } set { showShadows = value; OnPropertyChanged("ShowShadows"); } }
+        public bool NormalsMode { get { return normalsMode; } set { normalsMode = value; OnPropertyChanged("NormalsMode"); } }
         public Vector4 LightPosition { get { return lightPosition; } set { lightPosition = value; OnPropertyChanged("LightPosition"); } }
 
         public ApplicationViewModel()
@@ -64,6 +70,10 @@ namespace Render3D
             LightPosition = new Vector4(1, 10, -15, 1);
             LightColor = Vector3.One;
             RenderMode = RenderMode.Texture;
+
+            ShowReflections = false;
+            ShowShadows = true;
+            NormalsMode = false;
 
             camera = new Camera()
             {

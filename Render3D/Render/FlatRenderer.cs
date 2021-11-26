@@ -22,7 +22,7 @@ namespace Render3D.Render
     public class FlatRenderer : IRenderer
     {
         private WriteableBitmap _bitmap;
-        float[] _zBuffer;
+        private float[] _zBuffer;
         private int _width;
         private int _height;
         private int _backBufferStride;

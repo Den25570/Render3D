@@ -25,8 +25,15 @@ namespace Render3D.Render
         private int[] _pixelBuffer;
         private int _backBufferStride;
 
+        private RenderOptions _renderOptions;
+
         public float[] ZBuffer { get => _zBuffer; }
         public bool HasBitmap { get => _bitmap != null; }
+
+        public TextureRenderer(RenderOptions renderOptions)
+        {
+            _renderOptions = renderOptions;
+        }
 
         public void CreateBitmap(Canvas canvas, int width, int height)
         {
@@ -102,6 +109,7 @@ namespace Render3D.Render
                         coord /= coord.Z;
                         coord = Vector3.Clamp(coord, Vector3.Zero, Vector3.One);
                         var pos = (barycenter.X * triangle3D.Points[pi[0]] + barycenter.Y * triangle3D.Points[pi[1]] + barycenter.Z * triangle3D.Points[pi[2]]).ToVector3();
+
                         var ambientColor = triangle.Material?.GetAmbientColor(coord.X, 1 - coord.Y) ?? Vector3.One; //Ka
                         var diffuseColor = triangle.Material?.GetDiffuseColor(coord.X, 1 - coord.Y) ?? Vector3.One; //Kd
                         var specularColor = triangle.Material?.GetSpecularColor(coord.X, 1 - coord.Y) ?? Vector3.One; //Ks
@@ -117,9 +125,12 @@ namespace Render3D.Render
                             normal = Vector3.Normalize(Vector3.Transform(normal, tbn));
                         }
 
+                        var shadow = 0.0f;
+                        if (_renderOptions.ShowShadows)
+                            shadow = 1.0f;
+
                         // Per pixel light
                         var color = Vector3.Zero;
-                        var shadow = 1.0f;
                         for (int li = 0; li < scene.Lights.Length; li++)
                         {
                             
@@ -142,21 +153,24 @@ namespace Render3D.Render
                                     localShadow += projCoords.Z - bias > scene.shadowBuffers[li][(int)(projCoords.X + x), (int)(projCoords.Y + y)] ? 1.0f : 0.0f;
                             shadow = MathF.Min(shadow, localShadow / 9.0f);
 
-                            color += (Iamb + (1- shadow) * (Idiff + Ispec));
+                            color += (Iamb + (1 - shadow) * (Idiff + Ispec));
                         }
 
-                        // Spherical
                         // Per pixel Reflection
-                        //if (triangle.Material?.ReflectionMap != null)
-                        //{
-                        //    var e = Vector3.Normalize(scene.MainCamera.Position - pos);
-                        //    var r = Vector3.Reflect(e, normal);
-                        //    float m = 2.0f * MathF.Sqrt(r.X * r.X + r.Y * r.Y + (r.Z + 1.0f) * (r.Z + 1.0f));
-                        //    var vN = new Vector2((r.X / m) + 0.5f, (r.Y / m) + 0.5f);
-                        //    color = color * 0.6f + (triangle.Material.GetReflection(vN.X, vN.Y) ?? Vector3.Zero) * ambientColor * 0.4f;
-                        //}
+                        if (_renderOptions.ShowReflections)
+                        if (triangle.Material?.ReflectionMap != null)
+                        {
+                            var e = Vector3.Normalize(scene.MainCamera.Position - pos);
+                            var r = Vector3.Reflect(e, normal);
+                            float m = 2.0f * MathF.Sqrt(r.X * r.X + r.Y * r.Y + (r.Z + 1.0f) * (r.Z + 1.0f));
+                            var vN = new Vector2((r.X / m) + 0.5f, (r.Y / m) + 0.5f);
+                            color = color * 0.6f + (triangle.Material.GetReflection(vN.X, vN.Y) ?? Vector3.Zero) * ambientColor * 0.4f;
+                        }
 
-                        _pixelBuffer[zIndex] = color.ToRGB();
+                        if (_renderOptions.NormalsMode)
+                            _pixelBuffer[zIndex] = normal.ToRGB();
+                        else
+                            _pixelBuffer[zIndex] = color.ToRGB();
                         _zBuffer[zIndex] = zValue;
                     }
                 }

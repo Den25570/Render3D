@@ -110,8 +110,10 @@ namespace Render3D.Models
                 for (int j = 0; j < Triangles[i].Points.Length; j++)
                 {
                     Triangles[i].Points[j] = Vector4.Transform(Triangles[i].Points[j], transform);
+
                     Triangles[i].TextureCoordinates[j] /= Triangles[i].Points[j].W;
                     Triangles[i].TextureCoordinates[j].Z = 1.0f / Triangles[i].Points[j].W;
+
                     Triangles[i].Points[j] /= Triangles[i].Points[j].W;
                 }
                 if (transformNormals)
